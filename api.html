@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>LocalOTP · 临时验证码</title>
+    <script src="js/entry-boot.js"></script>
+    <script src="js/theme-boot.js"></script>
+    <link rel="icon" href="assets/icons/icon32.png" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/overlays.css" />
+    <link rel="stylesheet" href="styles/finish.css" />
+    <link rel="stylesheet" href="styles/color-schemes.css" />
+    <link rel="stylesheet" href="styles/studio.css" />
+    <link rel="stylesheet" href="styles/otp-tools.css" />
+  </head>
+  <body data-surface="otp">
+    <div id="api-app" class="api-app">
+      <header class="api-header">
+        <a class="api-brand" href="index.html" aria-label="打开 LocalOTP 账号管理">
+          <span class="brand-mark" aria-hidden="true"><svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 19.3 6.4v5.1c0 4.2-3 7.4-7.3 9-4.3-1.6-7.3-4.8-7.3-9V6.4z"/><path d="m8.9 12 2.2 2.2 4-4.2"/></svg></span>
+          <span>LocalOTP <small>临时验证</small></span>
+        </a>
+        <button class="ibtn" id="api-theme" type="button" aria-label="切换明暗主题"></button>
+      </header>
+      <main class="api-main">
+        <section class="api-intro" aria-labelledby="api-title">
+          <span class="api-eyebrow"><i class="dot"></i> 即时验证 · 无需保存账号</span>
+          <h1 id="api-title">此刻的验证码。</h1>
+          <p>粘贴密钥，即刻获取。<br>验证码与倒计时，始终保持同步。</p>
+        </section>
+        <section class="api-card" aria-label="临时 OTP 验证器">
+          <div id="api-generator"></div>
+          <div class="api-card-foot"><span id="api-local-icon" aria-hidden="true"></span><span>密钥仅用于当前页面计算，不会加入账号库或同步。</span></div>
+        </section>
+        <details class="api-guide">
+          <summary>从浏览器地址栏直接使用</summary>
+          <p>输入 <kbd>otp</kbd>，按 <kbd>Tab</kbd> 或空格进入 LocalOTP，再粘贴密钥并回车。</p>
+          <div class="api-code"><code>otp JBSWY3DPEHPK3PXP</code><span>公开示例</span></div>
+          <p>也可以使用本机扩展页面地址，追加 <code>#otp=密钥</code>。点下方复制的是不含密钥的入口地址。</p>
+          <button type="button" class="btn btn-ghost" id="api-copy-entry">复制入口地址</button>
+          <p class="api-history-note">地址栏输入可能被浏览器记录。敏感密钥建议直接粘贴到上方输入框。</p>
+        </details>
+      </main>
+      <footer class="api-footer">LOCALOTP <span>密钥留在本机，验证码随时间更新。</span></footer>
+    </div>
+    <noscript>LocalOTP 需要启用 JavaScript 才能计算验证码。</noscript>
+    <script src="js/util.js"></script>
+    <script src="js/totp.js"></script>
+    <script src="js/otp-input.js"></script>
+    <script src="js/otp-session.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/select.js"></script>
+    <script src="js/otp-widget.js"></script>
+    <script src="js/api.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+# 本机配置、密钥和账号备份不得提交。
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+localotp-backup-*.json
+
+# 运行依赖、缓存与系统文件。
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

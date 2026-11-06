@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "LocalOTP · 2FA 账号管理",
+  "short_name": "LocalOTP",
+  "version": "1.6.0",
+  "description": "管理邮箱、密码与 TOTP 验证码，支持可选的浏览器账号同步。管理密码只用于界面门禁。",
+  "action": {
+    "default_title": "LocalOTP",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "options_page": "index.html",
+  "options_ui": {
+    "page": "index.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "background": { "service_worker": "js/background.js" },
+  "omnibox": { "keyword": "otp" },
+  "permissions": ["storage", "clipboardWrite", "alarms"],
+  "minimum_chrome_version": "111"
+}

@@ -1,0 +1,596 @@
+/* ==========================================================================
+   LocalOTP · 基础层
+   重置、焦点可见性、滚动条、关键帧、舞台与外壳。
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv05" 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure {
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea {
+  outline: none;
+  background: none;
+  border: 0;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+img,
+svg {
+  display: block;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+::selection {
+  background: var(--brand-ring);
+  color: var(--ink);
+}
+
+/* ---- 焦点 ----------------------------------------------------------------
+   只有「按钮 / 链接 / 可聚焦行」这类没有外框的控件才画那圈外描边。
+   输入框一律交给外层容器（.search / .pw-wrap / .field-input / .imp-input）
+   自己画一圈柔光——否则边框 + 外描边会叠成两层，看起来又脏又糙。
+   ------------------------------------------------------------------------ */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none;
+}
+
+/* 自带柔光的输入容器不再需要外描边 */
+.search:focus-within,
+.pw-wrap:focus-within,
+.field-input:focus-within,
+.imp-input:focus {
+  outline: none;
+}
+
+/* 抽屉 / 对话框在打开时会被程序化聚焦（为了键盘滚动），
+   它们本身不是"控件"，不该画出那圈焦点框——否则整个面板外会多一道紫边。 */
+.sheet:focus,
+.sheet:focus-visible,
+.dialog:focus,
+.dialog:focus-visible,
+.screen:focus-visible,
+.main:focus-visible,
+.page:focus-visible {
+  outline: none;
+}
+
+/* ---- 滚动条：默认隐形，悬停在滚动区域才浮出 ---------------------------- */
+.scroller {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroller:hover,
+.scroller:focus-within {
+  scrollbar-color: var(--scroll) transparent;
+}
+
+.scroller::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroller::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 99px;
+  border: 1.5px solid transparent;
+  background-clip: content-box;
+}
+
+.scroller:hover::-webkit-scrollbar-thumb,
+.scroller:focus-within::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  background-clip: content-box;
+}
+
+.scroller::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hover);
+  background-clip: content-box;
+}
+
+/* ---- 排版工具 ---------------------------------------------------------- */
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.i {
+  flex: none;
+  stroke-width: 1.7;
+  overflow: visible;
+}
+
+.i-sm {
+  stroke-width: 1.85;
+}
+
+.i-lg {
+  stroke-width: 1.55;
+}
+
+/* ==========================================================================
+   关键帧
+   ========================================================================== */
+
+@keyframes lotp-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 条目入场：轻微上浮 + 几乎不可见的放大，收尾极慢 */
+@keyframes lotp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lotp-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  62% {
+    opacity: 1;
+    transform: scale(1.014);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 六位码换轮：整体下落 + 模糊，像机械计数器翻页 */
+@keyframes lotp-code-in {
+  0% {
+    opacity: 0.15;
+    transform: translateY(-5px);
+    filter: blur(2px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0.3px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes lotp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  14% {
+    transform: translateX(-6px);
+  }
+  28% {
+    transform: translateX(5px);
+  }
+  44% {
+    transform: translateX(-4px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+  78% {
+    transform: translateX(-1.5px);
+  }
+}
+
+@keyframes lotp-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.045);
+  }
+}
+
+/* 复制回执：只动 opacity / transform，不去改元素自身的底色与描边，
+   这样动画结束后外观能干净地回到常态。 */
+@keyframes lotp-copy-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(1.008);
+  }
+  16% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* 复制瞬间验证码轻跳，给"拿到了"一个触觉感 */
+@keyframes lotp-code-pop {
+  0% {
+    transform: none;
+  }
+  34% {
+    transform: translateY(-1.5px) scale(1.05);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes lotp-ripple {
+  from {
+    opacity: 0.55;
+    transform: scale(0.15);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes lotp-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(5%, 4%, 0) scale(1.1);
+  }
+}
+
+@keyframes lotp-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  50% {
+    transform: translate3d(-4%, -5%, 0) scale(0.95);
+  }
+}
+
+@keyframes lotp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lotp-sheen {
+  from {
+    background-position: -140% 0;
+  }
+  to {
+    background-position: 240% 0;
+  }
+}
+
+/* 键盘活动项落定时的轻微"落点"感 */
+@keyframes lotp-settle {
+  0% {
+    transform: scale(1.008);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 新条目落位：先亮一圈品牌光，再收回常态 */
+@keyframes lotp-new-flash {
+  0%,
+  55% {
+    box-shadow: 0 0 0 2px var(--brand-ring), 0 18px 36px -26px var(--brand-glow);
+  }
+  100% {
+    box-shadow: var(--shadow-xs);
+  }
+}
+
+/* 头像：复制成功时的一记弹跳（过冲两次，收在 1） */
+@keyframes lotp-avatar-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.18) rotate(-6deg);
+  }
+  56% {
+    transform: scale(0.94) rotate(3deg);
+  }
+  78% {
+    transform: scale(1.05) rotate(-1.5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* 头像：入场时从小弹出来 */
+@keyframes lotp-avatar-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.45) rotate(-16deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.1) rotate(4deg);
+  }
+  78% {
+    transform: scale(0.97) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* 头像：复制时掠过的一道高光 */
+@keyframes lotp-avatar-shine {
+  0% {
+    opacity: 0;
+    transform: rotate(14deg) translateX(0);
+  }
+  22% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(14deg) translateX(320%);
+  }
+}
+
+/* ==========================================================================
+   舞台（弹窗底部那张"桌面"）
+   ========================================================================== */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(1100px 720px at 8% -14%, rgba(196, 197, 255, 0.75) 0%, transparent 58%),
+    radial-gradient(900px 640px at 96% 112%, rgba(196, 240, 224, 0.7) 0%, transparent 56%),
+    #f7f8fc;
+  transition: background var(--t-4) ease;
+}
+
+[data-theme="dark"] .stage {
+  background:
+    radial-gradient(1100px 720px at 8% -14%, #1a1e44 0%, transparent 58%),
+    radial-gradient(900px 640px at 96% 112%, #0b2a24 0%, transparent 56%),
+    #05060b;
+}
+
+/* 两团缓慢漂移的光，给静态弹窗一点呼吸；只在弹窗形态出现 */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-ambient);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient i {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(58px);
+  opacity: 0.55;
+}
+
+.ambient .amb-a {
+  width: 300px;
+  height: 300px;
+  left: calc(50% - 350px);
+  top: 14%;
+  background: #c9cbff;
+  animation: lotp-drift-a 19s var(--e-inout) infinite;
+}
+
+.ambient .amb-b {
+  width: 240px;
+  height: 240px;
+  right: calc(50% - 330px);
+  bottom: 16%;
+  background: #bdf0dd;
+  animation: lotp-drift-b 23s var(--e-inout) infinite;
+}
+
+[data-theme="dark"] .ambient i {
+  opacity: 0.26;
+}
+
+/* 弹窗外壳：402 × 600，Chromium 弹窗上限内留出舒适合适的呼吸 */
+.shell {
+  position: relative;
+  z-index: var(--z-content);
+  width: min(402px, 100vw);
+  height: min(600px, calc(100vh - 40px));
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--r-6);
+  background: var(--bg);
+  box-shadow: var(--shadow-l);
+  transition: background var(--t-4) ease, box-shadow var(--t-4) ease;
+}
+
+/* 贴边时（真弹窗 / 窄屏）铺满 */
+@media (max-width: 430px), (max-height: 640px) {
+  .shell {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .ambient {
+    display: none;
+  }
+}
+
+/* 弹窗形态下把舞台收成 402 × 600 居中，即使是宽屏里的普通标签页也保持比例 */
+
+
+/* 弹窗外的那行说明文字，纯原型展示用 */
+.stage-note {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.stage-note b {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.stage-note .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+@media (max-height: 700px) {
+  .stage-note {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   无障碍：尊重"减少动态效果"
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

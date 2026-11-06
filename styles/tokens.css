@@ -1,0 +1,227 @@
+/* ==========================================================================
+   LocalOTP · 设计令牌
+   --------------------------------------------------------------------------
+   这一层只放"值"，不放任何结构。所有组件都从这里取色、取节奏。
+
+   命名约定
+     --bg*        画布层次（outer 最外的桌面 > bg 面板底 > bg-2/3 内层）
+     --surface*   卡片面层（1 静置 / 2 悬停 / 3 下沉）
+     --panel*     半透明面层，叠在任何底色上都成立
+     --line*      描边层级（soft 最淡 / strong 最强）
+     --ink*       文字层级（1 主 / 2 次 / 3 弱 / 4 极弱）
+     --brand*     品牌紫及其派生（soft 底纹 / line 描边 / ring 焦点光晕 / glow 投影）
+     --ok|warn|danger  语义色，各自带 -soft 底纹与 -ink 前景
+     --e-*        缓动曲线；--t-* 时长；--r-* 圆角；--fs-* 字号
+   ========================================================================== */
+
+:root {
+  /* ---- 字体 ──────────────────────────────────────────────────────────── */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code",
+    "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+  /* ---- 字号（402px 弹窗下的精密刻度）───────────────────────────────── */
+  --fs-2xs: 9.5px;
+  --fs-xs: 10.5px;
+  --fs-sm: 11.5px;
+  --fs-md: 12.5px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 20px;
+  --fs-3xl: 26px;
+
+  /* ---- 圆角 ──────────────────────────────────────────────────────────── */
+  --r-1: 6px;
+  --r-2: 8px;
+  --r-3: 10px;
+  --r-4: 13px;
+  --r-5: 17px;
+  --r-6: 20px;
+  --pill: 999px;
+
+  /* ---- 动效 ──────────────────────────────────────────────────────────── */
+  /* 主力曲线：起手快、尾部极慢，收得"贵" */
+  --e-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 带一点点过冲，只用于"按下去又弹回来"这类触觉反馈 */
+  --e-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+  --e-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --t-1: 110ms;
+  --t-2: 180ms;
+  --t-3: 280ms;
+  --t-4: 420ms;
+  --t-5: 660ms;
+
+  /* ---- 层级 ──────────────────────────────────────────────────────────── */
+  --z-ambient: 0;
+  --z-content: 1;
+  --z-fade: 5;
+  --z-dock: 6;
+  --z-veil: 39;
+  --z-sheet: 40;
+  --z-menu: 60;
+  --z-toast: 90;
+  --z-lock: 100;
+  --z-tip: 110;
+
+  /* ---- 头像墨色：浅色底上也要读得清 ────────────────────────────────── */
+  --av-ink: #ffffff;
+}
+
+/* ==========================================================================
+   浅色主题（默认）
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-outer: #e7e9f2;
+  --bg: #f4f5fa;
+  --bg-2: #eef0f8;
+  --surface: #ffffff;
+  --surface-2: #fafbff;
+  --surface-3: #f2f3f9;
+  --search-bg: #edeff7;
+
+  --panel: rgba(20, 26, 43, 0.026);
+  --panel-2: rgba(20, 26, 43, 0.05);
+  --panel-3: rgba(20, 26, 43, 0.076);
+
+  --line-soft: rgba(20, 26, 43, 0.055);
+  --line: #eaecf4;
+  --line-strong: #dee1ed;
+
+  --ink: #141a2b;
+  --ink-2: #5b6178;
+  --ink-3: #98a0b5;
+  --ink-4: #b8bdcc;
+
+  --brand: #5b5bf0;
+  --brand-2: #8b5cf6;
+  --brand-ink: #4646d8;
+  --brand-soft: #eeeefe;
+  --brand-line: rgba(91, 91, 240, 0.24);
+  --brand-ring: rgba(91, 91, 240, 0.16);
+  --brand-halo: rgba(91, 91, 240, 0.1);
+  --brand-glow: rgba(99, 102, 241, 0.45);
+  --brand-grad: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  --brand-grad-soft: linear-gradient(135deg, #eeeeff 0%, #f4edff 100%);
+
+  --ok: #0fae7e;
+  --ok-ink: #0a8a64;
+  --ok-soft: #e6f8f1;
+  --warn: #f59e0b;
+  --warn-ink: #b47408;
+  --warn-soft: #fef4e3;
+  --danger: #f0483e;
+  --danger-ink: #d3352b;
+  --danger-soft: #feedec;
+
+  --ring-track: #e9ebf5;
+  --ring-calm: var(--brand);
+  --ring-warn: var(--warn);
+  --ring-hot: var(--danger);
+
+  /* 分段控件：轨道比底色略深，滑块是干净的白 */
+  --seg-bg: #f2f3f9;
+  --seg-pill: #ffffff;
+
+  --scroll: rgba(120, 128, 155, 0.34);
+  --scroll-hover: rgba(120, 128, 155, 0.55);
+
+  --toast-bg: #1b2033;
+  --toast-ink: #ffffff;
+
+  --lock-bg: #f2f4f8;
+  --veil: rgba(17, 20, 34, 0.34);
+
+  --shadow-xs: 0 1px 2px rgba(20, 26, 43, 0.05);
+  --shadow-s: 0 2px 6px -1px rgba(20, 26, 43, 0.06), 0 1px 2px rgba(20, 26, 43, 0.04);
+  --shadow-m: 0 14px 30px -18px rgba(28, 32, 80, 0.35), 0 2px 6px -2px rgba(20, 26, 43, 0.06);
+  --shadow-l: 0 50px 90px -40px rgba(28, 30, 78, 0.4), 0 12px 30px -18px rgba(28, 30, 78, 0.2),
+    0 0 0 1px rgba(20, 26, 43, 0.05);
+  --shadow-brand: 0 10px 22px -12px rgba(99, 102, 241, 0.75);
+
+  --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --av-ink: #ffffff;
+}
+
+/* ==========================================================================
+   深色主题
+   ========================================================================== */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-outer: #05060a;
+  --bg: #0c0e15;
+  --bg-2: #11141d;
+  --surface: #161a25;
+  --surface-2: #1a1f2c;
+  --surface-3: #1e2331;
+  --search-bg: #1c212e;
+
+  --panel: rgba(255, 255, 255, 0.028);
+  --panel-2: rgba(255, 255, 255, 0.055);
+  --panel-3: rgba(255, 255, 255, 0.085);
+
+  --line-soft: rgba(255, 255, 255, 0.05);
+  --line: #242a39;
+  --line-strong: #2e3547;
+
+  --ink: #edeff7;
+  --ink-2: #a6adc2;
+  --ink-3: #6c7488;
+  --ink-4: #4d5468;
+
+  --brand: #8c8cff;
+  --brand-2: #b18cff;
+  --brand-ink: #a6a6ff;
+  --brand-soft: rgba(140, 140, 255, 0.14);
+  --brand-line: rgba(140, 140, 255, 0.3);
+  --brand-ring: rgba(140, 140, 255, 0.2);
+  --brand-halo: rgba(140, 140, 255, 0.12);
+  --brand-glow: rgba(140, 140, 255, 0.45);
+  --brand-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --brand-grad-soft: linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(139, 92, 246, 0.12) 100%);
+
+  --ok: #34d399;
+  --ok-ink: #5fe3b4;
+  --ok-soft: rgba(52, 211, 153, 0.14);
+  --warn: #fbbf24;
+  --warn-ink: #f7cd6a;
+  --warn-soft: rgba(251, 191, 36, 0.14);
+  --danger: #fb7185;
+  --danger-ink: #ff96a5;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+
+  --ring-track: #262c3b;
+  --ring-calm: var(--brand);
+  --ring-warn: var(--warn);
+  --ring-hot: var(--danger);
+
+  /* 深色下轨道要比底色暗一点，滑块反而更亮，才有"浮起来"的方向感 */
+  --seg-bg: rgba(255, 255, 255, 0.045);
+  --seg-pill: rgba(255, 255, 255, 0.13);
+
+  --scroll: rgba(160, 170, 200, 0.3);
+  --scroll-hover: rgba(160, 170, 200, 0.5);
+
+  --toast-bg: #edeff7;
+  --toast-ink: #10131c;
+
+  --lock-bg: #08090d;
+  --veil: rgba(3, 4, 8, 0.52);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-m: 0 16px 32px -18px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --shadow-l: 0 50px 90px -40px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-brand: 0 12px 26px -14px rgba(120, 120, 255, 0.75);
+
+  --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --av-ink: #0b1219;
+}

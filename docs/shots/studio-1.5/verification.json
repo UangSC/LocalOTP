@@ -1,0 +1,16 @@
+{
+  "checks": 52,
+  "errors": [],
+  "metrics": [
+    {
+      "popup": {
+        "viewportHeight": 237.125,
+        "widgetHeight": 156.875,
+        "dockBottom": 600,
+        "scrollWidth": 402
+      }
+    }
+  ],
+  "networkRequestCount": 138,
+  "extensionId": "idogckhphdkccjoegmeklbfnaaipfpmh"
+}

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LocalOTP</title>
+    <link rel="icon" href="assets/icons/icon32.png" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/overlays.css" />
+    <link rel="stylesheet" href="styles/finish.css" />
+    <link rel="stylesheet" href="styles/color-schemes.css" />
+    <link rel="stylesheet" href="styles/studio.css" />
+    <link rel="stylesheet" href="styles/otp-tools.css" />
+    <link rel="stylesheet" href="styles/window-tools.css" />
+    <script src="js/theme-boot.js"></script>
+    <script src="js/window-boot.js"></script>
+  </head>
+  <!--
+    弹窗形态：402 × 600，只做一件事 —— 让三样东西（邮箱 / 密码 / 验证码）
+    用最少的动作进剪贴板。批量导入、分类管理、备份这些「重」功能
+    统一放在宽屏管理页（index.html），这里只留一个入口。
+  -->
+  <body data-surface="popup">
+    <div class="stage">
+      <div class="ambient" aria-hidden="true"><i class="amb-a"></i><i class="amb-b"></i></div>
+
+      <div class="shell" id="shell">
+        <div class="app" id="app">
+          <section class="screen" id="screen" aria-label="验证码列表">
+            <header class="topbar">
+              <div class="brand">
+                <div class="brand-mark" aria-hidden="true">
+                  <svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3.6 19.3 6.4v5.1c0 4.2-3 7.4-7.3 9-4.3-1.6-7.3-4.8-7.3-9V6.4z" />
+                    <path d="m8.9 12 2.2 2.2 4-4.2" />
+                  </svg>
+                </div>
+                <span class="brand-name">LocalOTP</span>
+                <span class="brand-tag">
+                  <svg class="i" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4.6" y="10.2" width="14.8" height="10" rx="2.9" />
+                    <path d="M8.2 10.2V7.6a3.8 3.8 0 0 1 7.6 0v2.6" />
+                  </svg>
+                  本地
+                </span>
+              </div>
+
+              <div class="top-actions">
+                <button class="ibtn" id="pin-window-btn" type="button" aria-label="固定为独立小窗"></button>
+                <button class="ibtn" id="add-btn" type="button" data-tip="新增账号 · N" aria-label="新增账号">
+                  <svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M12 5.4v13.2M5.4 12h13.2" />
+                  </svg>
+                </button>
+                <button class="ibtn" id="settings-btn" type="button" data-tip="设置 · S" aria-label="设置">
+                  <svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3.9 7.4h9.3M17.5 7.4h2.6M3.9 16.6h2.6M10.9 16.6h9.2" />
+                    <circle cx="15.3" cy="7.4" r="2.2" />
+                    <circle cx="8.6" cy="16.6" r="2.2" />
+                  </svg>
+                </button>
+                <button class="ibtn" id="lock-btn" type="button" data-tip="立即锁定 · L" aria-label="立即锁定">
+                  <svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4.6" y="10.2" width="14.8" height="10" rx="2.9" />
+                    <path d="M8.2 10.2V7.6a3.8 3.8 0 0 1 7.6 0v2.6" />
+                    <circle cx="12" cy="15.1" r="1.15" fill="currentColor" stroke="none" />
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <div class="searchzone">
+              <div class="search" id="search-box">
+                <svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                  <circle cx="10.8" cy="10.8" r="6.3" />
+                  <path d="m15.4 15.4 4.3 4.3" />
+                </svg>
+                <input
+                  id="search-input"
+                  type="text"
+                  placeholder="搜索邮箱、服务或验证码"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="搜索账号"
+                />
+                <div class="search-right">
+                  <span class="match-pill" id="match-pill">0/0</span>
+                  <kbd>Ctrl K</kbd>
+                  <button class="search-clear" id="search-clear" type="button" aria-label="清除搜索">
+                    <svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                      <path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <section id="quick-generator" aria-label="临时 OTP 验证器"></section>
+
+            <div class="viewport" id="viewport">
+              <div class="list scroller" id="list" data-view="quick" role="list"></div>
+
+              <div class="focus-pill" id="focus-pill" hidden>
+                <span class="focus-pill-ico">
+                  <svg class="i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="7.4" />
+                    <circle cx="12" cy="12" r="2.2" />
+                    <path d="M12 2.4v3.2M12 18.4v3.2M2.4 12h3.2M18.4 12h3.2" />
+                  </svg>
+                </span>
+                <span class="focus-pill-name" id="focus-name">聚焦锁定</span>
+                <button class="focus-pill-x" id="focus-exit" type="button" aria-label="退出聚焦锁定" data-tip="退出 · Esc">
+                  <svg class="i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+                    <path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="statusbar">
+              <span class="sb-left">
+                <i class="dot" id="status-dot"></i>
+                <span id="status-text">本地存储</span>
+                <span class="sb-sep">·</span>
+                <b id="count">0</b>
+                <span>条</span>
+              </span>
+              <span id="status-hint">单击卡片复制验证码</span>
+            </div>
+
+            <footer class="dock">
+              <button class="btn btn-primary dock-wide" id="open-page-btn" type="button">
+                <span class="dock-left">
+                  <svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3.8" y="4.4" width="16.4" height="15.2" rx="2.4" />
+                    <path d="M3.8 9.2h16.4M9 9.2v10.4" />
+                  </svg>
+                  打开管理页
+                </span>
+                <svg class="i dock-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 17 17 7" />
+                  <path d="M9.4 7H17v7.6" />
+                </svg>
+              </button>
+
+              <button class="dock-add" id="quick-add-btn" type="button" data-tip="快速添加 · N" aria-label="快速添加账号">
+                <svg class="i" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+                  <path d="M12 5.6v12.8M5.6 12h12.8" />
+                </svg>
+              </button>
+            </footer>
+          </section>
+        </div>
+      </div>
+
+      <p class="stage-note">
+        <b>LocalOTP</b>
+        <span class="dot"></span>
+        <kbd>Ctrl K</kbd>
+        <span>搜索</span>
+        <span class="dot"></span>
+        <kbd class="is-key" aria-label="上"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.4 11.6 12 6l5.6 5.6" /></svg></kbd>
+        <kbd class="is-key" aria-label="下"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M17.6 12.4 12 18l-5.6-5.6" /></svg></kbd>
+        <span>定位</span>
+        <span class="dot"></span>
+        <kbd>Enter</kbd>
+        <span>复制</span>
+      </p>
+    </div>
+
+    <noscript>LocalOTP 需要启用 JavaScript 才能运行。</noscript>
+
+    <script src="js/util.js"></script>
+    <script src="js/totp.js"></script>
+    <script src="js/seed.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/access.js"></script>
+    <script src="js/pin-window.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/select.js"></script>
+    <script src="js/otp-input.js"></script>
+    <script src="js/otp-session.js"></script>
+    <script src="js/otp-widget.js"></script>
+    <script src="js/list.js"></script>
+    <script src="js/sheets.js"></script>
+    <script src="js/gate-motion.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

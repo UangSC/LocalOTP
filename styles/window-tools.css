@@ -1,0 +1,25 @@
+/* 折叠区用网格插值保留高度过渡，收起时禁用焦点和计时器。 */
+.is-collapsible .otp-head { margin-bottom: 0 !important; min-height: 24px; }
+.otp-fold-toggle { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; text-align: left; font-size: 12px; font-weight: 550; padding: 5px 0; }
+.otp-fold-arrow { color: var(--ink-3); transition: transform 280ms var(--e-out); }
+[data-otp-open="true"] .otp-fold-arrow { transform: rotate(180deg); }
+.otp-fold-grid { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 300ms var(--e-out), opacity 200ms ease; }
+.otp-fold-clip { min-height: 0; overflow: hidden; }
+.is-collapsible .otp-fold-content { padding-top: 9px; }
+[data-otp-open="true"] .otp-fold-grid { grid-template-rows: 1fr; opacity: 1; }
+body[data-surface="popup"] #quick-generator.is-collapsible { padding: 8px 12px; }
+#pin-window-btn[aria-pressed="true"] { color: var(--brand-ink); background: var(--brand-soft); }
+[data-floating] body[data-surface="popup"] { width: 100%; height: 100vh; margin: 0; }
+[data-floating] .shell { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+[data-floating] .stage-note, [data-floating] .ambient { display: none; }
+.pip-cover { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 30px; background: var(--bg); text-align: center; }
+.pip-cover-icon { padding: 18px; border-radius: 20px; color: var(--brand-ink); background: var(--brand-soft); }
+.pip-cover h1 { font-size: 22px; font-weight: 600; }
+.pip-cover p { color: var(--ink-2); font-size: 12px; line-height: 1.8; max-width: 280px; }
+.remember-duration { margin: 0 12px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink-2); font-size: 11px; }
+.sync-help { margin: 4px 12px 14px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--studio-code); color: var(--ink-2); font-size: 11px; line-height: 1.8; }
+.sync-help summary { color: var(--brand-ink); cursor: pointer; }
+.sync-help ol { list-style: decimal; padding-left: 20px; margin-top: 10px; }
+.sync-help p { margin: 9px 0; }
+.sync-help code { font-size: 10px; overflow-wrap: anywhere; user-select: text; }
+@media (prefers-reduced-motion: reduce) { .otp-fold-grid, .otp-fold-arrow { transition: none; } }
