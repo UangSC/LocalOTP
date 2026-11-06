@@ -96,7 +96,8 @@
         if (!state.settings.syncEnabled) return { ok: false, error: "同步尚未开启" };
         const remote = await call(area, "get", null) || {};
         const before = { accounts: state.accounts, categories: state.categories };
-        const merged = merge(state, decode(remote, normalize));
+        const remoteData = decode(remote, normalize);
+        const merged = merge(state, remoteData);
         const wanted = encode(merged);
         const push = Object.fromEntries(Object.entries(wanted).filter(([k, v]) => !equal(remote[k], v)));
         const remove = Object.keys(remote).filter((k) => ownedKey(k) && !(k in wanted));
@@ -123,7 +124,7 @@
         const pushed = Object.keys(push).filter((k) => k.startsWith("acc:")).length;
         const deleted = before.accounts.filter((a) => !merged.accounts.some((b) => a.id === b.id)).length;
         if (!equal(before, { accounts: state.accounts, categories: state.categories })) emit("sync:data");
-        return { ok: true, pulled, pushed, deleted };
+        return { ok: true, pulled, pushed, deleted, remoteAccounts: remoteData.accounts.length, localAccounts: merged.accounts.length };
       });
     }
     function now() {
@@ -133,7 +134,8 @@
       clearTimeout(timer);
       report({ busy: true, error: "" });
       pending = run().catch((err) => ({ ok: false, error: err.message || "同步失败" })).then((result) => {
-        report({ busy: false, error: result.ok ? "" : result.error });
+        report({ busy: false, error: result.ok ? "" : result.error,
+          lastResult: result.ok ? { pulled: result.pulled, pushed: result.pushed, remoteAccounts: result.remoteAccounts, localAccounts: result.localAccounts } : null });
         return result;
       }).finally(() => { pending = null; });
       return pending;
@@ -166,8 +168,19 @@
       try { return { used: await call(area, "getBytesInUse", null), quota: area.QUOTA_BYTES || 102400 }; }
       catch (err) { return { used: 0, quota: 102400, error: err.message }; }
     }
-    return { available: () => !!area, info, now, enable, disable, usage, schedule,
-      receiveStatus(value) { if (isPage && value) report({ busy: !!value.busy && Date.now() - value.at < 60000, error: value.error || "" }); },
+    async function inspect() {
+      if (!area) return { ok: false, error: "请在实际扩展中检查同步存储" };
+      try {
+        const remote = await call(area, "get", null) || {};
+        const keys = Object.keys(remote);
+        return { ok: true, extensionId: global.chrome?.runtime?.id || "", enabled: !!state.settings.syncEnabled,
+          localAccounts: state.accounts.length, cachedAccounts: keys.filter(key => key.startsWith("acc:")).length,
+          cachedCategories: keys.filter(key => key.startsWith("cat:")).length,
+          cachedDeletions: keys.filter(key => key.startsWith("tomb:")).length, lastMergeAt: state.settings.lastSyncAt || 0 };
+      } catch (error) { return { ok: false, error: error.message || "读取失败" }; }
+    }
+    return { available: () => !!area, info, now, enable, disable, usage, inspect, schedule,
+      receiveStatus(value) { if (isPage && value) report({ busy: !!value.busy && Date.now() - value.at < 60000, error: value.error || "", lastResult: value.lastResult || null }); },
       cancel: () => clearTimeout(timer) };
   };
 })(typeof window === "undefined" ? globalThis : window);

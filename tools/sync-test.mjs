@@ -58,6 +58,11 @@ const remote = backend();
 const a = device(remote), b = device(remote), offline = device(remote);
 await Promise.all([a.store.init(), b.store.init(), offline.store.init()]);
 check("扩展首次使用没有虚构账号参与同步", () => assert.equal(a.store.accounts().length, 0));
+const beforeInspect = JSON.stringify({ local: a.local.data, remote: remote.data });
+const writesBeforeInspect = remote.calls.filter(call => call === "set" || call === "remove").length;
+const emptyInspect = await a.store.sync.inspect();
+check("只读诊断准确报告空缓存", () => assert.ok(emptyInspect.ok && emptyInspect.localAccounts === 0 && emptyInspect.cachedAccounts === 0));
+check("诊断不写入或删除本机与同步记录", () => assert.ok(beforeInspect === JSON.stringify({ local: a.local.data, remote: remote.data }) && writesBeforeInspect === remote.calls.filter(call => call === "set" || call === "remove").length));
 a.store.saveCategory({ name: "工作", icon: "code" });
 const cat = a.store.categories()[0];
 const first = a.store.createAccount({ ...payload(), categoryId: cat.id });
@@ -173,5 +178,15 @@ const legacy = device(legacyRemote); await legacy.store.init(); await legacy.sto
 check("旧分类数组迁移为逐条记录", () => assert.ok(legacyRemote.data['cat:old-cat'] && !legacyRemote.data.categories));
 check("迁移保留账号与分类关联", () => assert.equal(legacy.store.accounts()[0].categoryId, 'old-cat'));
 quotaDevice.close(); legacy.close();
+// 1.5.0 使用的 acc:/cat: 逐项布局；版本升级不改变命名空间，扩展 ID 改变才会换空间。
+const v150 = backend({ 'acc:v150': { ...payload('legacy@example.com'), id: 'v150', categoryId: 'group', createdAt: 1, updatedAt: 1 },
+  'cat:group': { id: 'group', name: '旧版本分类', icon: 'folder', createdAt: 1, updatedAt: 1 } });
+const upgraded = device(v150); await upgraded.store.init(); const upgradeResult = await upgraded.store.sync.enable();
+check("同一同步空间可读取 1.5.0 的账号和分类", () => assert.ok(upgradeResult.remoteAccounts === 1 && upgraded.store.accounts()[0].id === 'v150' && upgraded.store.categories()[0].id === 'group'));
+const oldSpace = JSON.stringify(v150.data), newNamespace = backend(), freshInstall = device(newNamespace);
+await freshInstall.store.init(); const newResult = await freshInstall.store.sync.enable();
+check("新扩展 ID 的空空间明确返回 0 条而不是旧账号", () => assert.ok(newResult.remoteAccounts === 0 && newResult.localAccounts === 0 && newResult.pulled === 0));
+check("新空间空同步不会清除另一个旧空间", () => assert.equal(JSON.stringify(v150.data), oldSpace));
+upgraded.close(); freshInstall.close();
 for (const d of [a, b, offline, tab1, tab2]) d.close();
 console.log(`同步测试 ${count} 项通过`);

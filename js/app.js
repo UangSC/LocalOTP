@@ -264,7 +264,15 @@
     button.disabled = true;
     button.textContent = "正在生成摘要…";
     await store.setPassword(a);
-    await OTP.access.unlock(a);
+    let authorized = false, authorizationError = "密码已保存，但后台授权未完成，请重新解锁";
+    try { authorized = await OTP.access.unlock(a); } catch (error) { authorizationError = error.message; }
+    if (!authorized) {
+      rebuildLock("unlock", false);
+      const message = runtime.lockNode.querySelector(".lock-err");
+      message.textContent = authorizationError;
+      message.classList.add("is-show");
+      return;
+    }
     button.textContent = "创建并进入";
     await markEntered(lockNode);
   }
@@ -470,7 +478,7 @@
     const settings = store.settings();
     const sync = store.sync.info();
     // 条数由 #count 单独渲染，这里只说来源，避免"10 条 · 10 条"
-    els.statusText.textContent = !settings.syncEnabled ? "本地存储" : sync.error ? "同步失败 · 设置中重试" : sync.busy ? "正在同步…" : "自动同步已开启";
+    els.statusText.textContent = !settings.syncEnabled ? "本地存储" : sync.error ? "同步失败 · 设置中重试" : sync.busy ? "正在同步…" : sync.lastResult?.remoteAccounts === 0 && sync.lastResult?.localAccounts === 0 ? "同步缓存为空" : "自动同步已开启";
     if (els.statusDot) els.statusDot.classList.toggle("is-live", !!settings.syncEnabled);
   }
 

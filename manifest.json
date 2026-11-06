@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "LocalOTP · 2FA 账号管理",
   "short_name": "LocalOTP",
-  "version": "1.6.0",
+  "version": "1.6.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2T0wFx0TuEW6C5OGr2wTJvdYrrboCNud10YZY4lS+od3ldFnQ0iyyRgfy/OfiLoozfgYMW3nd9cRN9ZlCyLeRy0n7Ow8nRXah+m3Sgn4lR6lt5wSENzXlZzuh6S3ii+ZAZEsiOzlbBx44JAN8B3IOjgAO/M+mjzgzIR2JiXEvqGkPpv3f1m3OXgfEXxgqs/QmV0H0D6lNm395HG5YhHM36leGb4rj5XYRN4nA2vryf32NHo4hsNUoU53ic9K9tfsHmWPMmyfI90i705FIetEtgA042yvejACcVCXtDBMDqoex0nq5KLsZ9FSB4WB5c8MOxO2k2/riw3Tn2M4fdMmawIDAQAB",
   "description": "管理邮箱、密码与 TOTP 验证码，支持可选的浏览器账号同步。管理密码只用于界面门禁。",
   "action": {
     "default_title": "LocalOTP",

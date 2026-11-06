@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "LocalOTP · 旧版数据只读恢复",
+  "version": "1.0.0",
+  "description": "只读取旧扩展 ID 的本机及同步缓存并导出备份，不写入或删除同步数据。",
+  "permissions": ["storage"],
+  "action": {"default_title": "LocalOTP 旧数据只读恢复", "default_popup": "recovery.html"},
+  "options_ui": {"page": "recovery.html", "open_in_tab": true}
+}

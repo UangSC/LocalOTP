@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-const context = { OTP: {} }; vm.createContext(context);
+const context = { OTP: {}, URL }; vm.createContext(context);
 vm.runInContext(readFileSync('js/access-service.js', 'utf8'), context);
 function fixture(minutes = 0) {
   let time = 1000000, sequence = 0, session;
@@ -123,4 +123,21 @@ await test('兼容既有长密码，不在后台新增长度限制导致锁定',
   const service = context.OTP.createAccessService({ readLocal: async () => ({ security: { salt: 'one', hash: 'hash', createdAt: 1 }, settings: {} }),
     readSession: async () => undefined, writeSession: async () => {}, verify: async value => value === password, now: () => 1000, random: () => 'random' });
   assert.ok((await service.request({ action: 'unlock', password }, 'one')).ok);
+});
+await test('真实工具栏消息没有 documentId 时使用随机页面标识，但不因此授予权限', async () => {
+  const id='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', clientId='11111111-2222-4333-8444-555555555555';
+  const sender={id,url:`chrome-extension://${id}/popup.html`};
+  const caller=context.OTP.accessCaller({clientId},sender,id);
+  assert.equal(caller,'page:'+clientId);
+  const f=fixture();
+  assert.equal((await f.request({action:'ticket'},caller)).ok,false);
+  const auth=await f.request({action:'unlock',password:'valid'},caller);
+  assert.ok((await f.request({action:'ticket',proof:auth.proof},caller)).ok);
+  assert.equal((await f.request({action:'ticket',proof:auth.proof},'page:other')).ok,false);
+});
+await test('来源检查拒绝网页、其他扩展、工具页面、伪造页面标识', () => {
+  const id='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', clientId='11111111-2222-4333-8444-555555555555';
+  for(const sender of [{id:'other',url:`chrome-extension://${id}/popup.html`},{id,url:'https://example.com/popup.html'},{id,url:`chrome-extension://${id}/api.html`}]) assert.equal(context.OTP.accessCaller({clientId},sender,id),null);
+  for(const value of [undefined,'__proto__','',123])assert.equal(context.OTP.accessCaller({clientId:value},{id,url:`chrome-extension://${id}/popup.html`},id),null);
+  assert.equal(context.OTP.accessCaller({clientId},{id,url:`chrome-extension://${id}/popup.html`,documentId:'real-document'},id),'document:real-document');
 });

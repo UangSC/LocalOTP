@@ -3,6 +3,17 @@
 (function (global) {
   "use strict";
   const OTP = global.OTP;
+  // 工具栏 POPUP 的 MessageSender 在 Edge 中可能没有 documentId；不能把它误判为未登录。
+  // 每个页面的随机 clientId 只标识调用者，授权仍必须通过密码和后台签发的 proof。
+  OTP.accessCaller = function (message, sender, extensionId) {
+    try {
+      const url = new URL(sender.url);
+      if (sender.id !== extensionId || url.protocol !== "chrome-extension:" || url.hostname !== extensionId || !["/popup.html", "/index.html"].includes(url.pathname)) return null;
+      if (typeof sender.documentId === "string" && sender.documentId) return "document:" + sender.documentId;
+      if (typeof message.clientId === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(message.clientId)) return "page:" + message.clientId;
+    } catch (_) {}
+    return null;
+  };
   OTP.createAccessService = function ({ readLocal, readSession, writeSession, verify, now = Date.now,
     random = () => crypto.randomUUID() }) {
     let queue = Promise.resolve();
@@ -22,7 +33,7 @@
         const keys = Object.keys(state.proofs);
         if (keys.length >= 128) delete state.proofs[keys[0]];
         const proof = random(); state.proofs[caller] = { token: proof, at };
-        return { ok: true, proof, expires: state.lease?.expires || 0, at: state.lease?.at || 0 };
+        return { ok: true, proof, epoch: state.epoch, expires: state.lease?.expires || 0, at: state.lease?.at || 0 };
       };
       const authorized = () => version && typeof message.proof === "string" && message.proof.length > 0 && Object.hasOwn(state.proofs, caller) && state.proofs[caller].token === message.proof;
       let result = { ok: false };
@@ -45,13 +56,13 @@
           break;
         }
         case "remember": {
-          if (!authorized()) break;
+          if (!authorized()) { result = { ok: false, code: "AUTH_REQUIRED", error: "当前页面授权已失效，请锁定后重新解锁" }; break; }
           const at = state.proofs[caller].at;
           state.lease = minutes && time < at + minutes * 60000 ? { at, expires: at + minutes * 60000, minutes } : null;
           result = { ok: true, expires: state.lease?.expires || 0, at: state.lease?.at || 0 }; break;
         }
         case "ticket": {
-          if (!authorized()) break;
+          if (!authorized()) { result = { ok: false, code: "AUTH_REQUIRED", error: "当前页面授权已失效，请锁定后重新解锁" }; break; }
           const ticket = random();
           state.tickets[ticket] = { at: time, expires: time + 10000, verifiedAt: state.proofs[caller].at };
           result = { ok: true, ticket }; break;

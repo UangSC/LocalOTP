@@ -53,13 +53,12 @@ function schedule() {
 }
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (message?.type === "localotp:access") {
-    let trusted = false;
-    try { const url = new URL(sender.url); trusted = sender.id === chrome.runtime.id && url.origin === new URL(chrome.runtime.getURL("/")).origin && ["/popup.html", "/index.html"].includes(url.pathname); } catch (_) {}
-    if (!trusted || !sender.documentId) { reply({ ok: false }); return; }
+    const caller = OTP.accessCaller(message, sender, chrome.runtime.id);
+    if (!caller) { reply({ ok: false, code: "INVALID_CONTEXT", error: "无法识别当前扩展页面，请重新加载扩展" }); return; }
     const task = message.action === "float"
-      ? accessService.request({ ...message, action: "ticket" }, sender.documentId).then(result => result.ok ? openFloating(result.ticket) : result)
-      : accessService.request(message, sender.documentId);
-    task.then(reply, () => reply({ ok: false, error: "会话或窗口操作失败" }));
+      ? accessService.request({ ...message, action: "ticket" }, caller).then(result => result.ok ? openFloating(result.ticket).catch(() => ({ ok: false, code: "WINDOW_CREATE_FAILED", error: "浏览器未能创建独立窗口，请检查浏览器策略后重试" })) : result)
+      : accessService.request(message, caller);
+    task.then(reply, () => reply({ ok: false, code: "SESSION_FAILED", error: "浏览器会话存储操作失败，请重新加载扩展" }));
     return true;
   }
   if (message?.type !== "localotp:sync") return;

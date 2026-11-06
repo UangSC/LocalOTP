@@ -9,6 +9,7 @@
 [data-otp-open="true"] .otp-fold-grid { grid-template-rows: 1fr; opacity: 1; }
 body[data-surface="popup"] #quick-generator.is-collapsible { padding: 8px 12px; }
 #pin-window-btn[aria-pressed="true"] { color: var(--brand-ink); background: var(--brand-soft); }
+#pin-window-btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: 28px; padding: 0 6px; gap: 4px; font-size: 10px; white-space: nowrap; }
 [data-floating] body[data-surface="popup"] { width: 100%; height: 100vh; margin: 0; }
 [data-floating] .shell { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
 [data-floating] .stage-note, [data-floating] .ambient { display: none; }

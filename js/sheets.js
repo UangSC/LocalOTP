@@ -1180,7 +1180,7 @@
             meterRow.hidden = false;
             await updateUsage();
             changed("sync");
-            ui.toast("同步已开启");
+            showSyncResult(result);
           }
         } catch (err) {
           syncToggle.setAttribute("aria-checked", String(!!store.settings().syncEnabled));
@@ -1219,11 +1219,31 @@
       onclick: async () => {
         syncNowButton.disabled = true;
         const result = await store.sync.now();
-        ui.toast(result.ok ? `同步完成 · 拉取 ${result.pulled} 条，上传 ${result.pushed} 条` : result.error, result.ok ? "ok" : "bad");
+        showSyncResult(result);
         updateSyncState();
         updateUsage();
       },
     });
+    function showSyncResult(result) {
+      if (!result.ok) { ui.toast(result.error, "bad"); return; }
+      if (result.remoteAccounts === 0 && result.localAccounts === 0) {
+        ui.toast("当前扩展 ID 的同步缓存没有账号，请检查旧版 ID 或浏览器账号同步", "warn", { duration: 6500 });
+      } else ui.toast(`同步存储已合并 · 读取 ${result.pulled} 条，提交 ${result.pushed} 条`);
+    }
+    const diagnosticBox = el("div", { class: "sync-help", id: "sync-diagnostics", hidden: true, role: "status" });
+    const inspectButton = el("button", { class: "btn btn-ghost btn-xs", type: "button", id: "sync-inspect", text: "只读检查",
+      disabled: !syncAvailable, onclick: async () => {
+        inspectButton.disabled = true;
+        try {
+          const report = await store.sync.inspect();
+          diagnosticBox.replaceChildren(); diagnosticBox.hidden = false;
+          if (!report.ok) { diagnosticBox.append(el("p", { text: report.error })); return; }
+          diagnosticBox.append(el("code", { text: "当前扩展 ID：" + report.extensionId }),
+            el("p", { text: `本机账号 ${report.localAccounts} 条 · 当前同步缓存账号 ${report.cachedAccounts} 条 · 分类 ${report.cachedCategories} 条` }),
+            el("p", { text: report.cachedAccounts ? "此处是当前浏览器已收到的同步缓存，不能证明其他设备已收到。" : "这个 ID 的同步缓存为空。若升级时删除旧扩展并改用新目录，旧数据属于另一个 ID。" }),
+            el("p", { text: "此检查不会修改本机或同步记录，也无法读取其他扩展 ID 的空间。" }));
+        } finally { inspectButton.disabled = !syncAvailable; }
+      } });
     function updateSyncState() {
       const info = store.sync.info();
       syncToggle.setAttribute("aria-checked", String(info.enabled));
@@ -1234,7 +1254,8 @@
         : !info.enabled ? "已关闭 · 数据只在本机"
         : info.busy ? "正在与浏览器同步存储合并…"
         : info.error ? "同步失败 · " + info.error
-        : info.lastSyncAt ? "上次同步 " + OTP.fmt.clockText(info.lastSyncAt) : "等待首次同步";
+        : info.lastResult?.remoteAccounts === 0 && info.lastResult?.localAccounts === 0 ? "当前同步缓存没有账号 · 请核对扩展 ID"
+        : info.lastSyncAt ? "上次合并 " + OTP.fmt.clockText(info.lastSyncAt) : "等待首次同步";
     }
     updateSyncState();
     const unsubscribe = store.subscribe((reason) => {
@@ -1247,6 +1268,8 @@
       group("同步与备份", [
         syncRow,
         setRow({ icon: "refresh", label: "同步状态", desc: "自动合并账号、分类与删除记录", control: syncNowButton }),
+        setRow({ icon: "info", label: "同步诊断", desc: "检查当前扩展 ID、本机和同步缓存条数", control: inspectButton }),
+        diagnosticBox,
         el("p", { class: "field-hint", text: "同一种浏览器登录同一账号，并开启扩展同步；两台设备需使用同一扩展 ID。浏览器决定云端传输时间，完成本地合并不等于另一台设备已收到。" }),
         el("p", { class: "field-hint", text: "开启后，账号密码与 TOTP 密钥将写入浏览器同步存储，未做端到端加密；管理密码不上云。" }),
         el("details", { class: "sync-help" },
@@ -1366,7 +1389,7 @@
     body.append(
       el("p", {
         class: "sheet-footnote",
-        text: "LocalOTP 1.6.0 · 本地存储 / 可选浏览器同步",
+        text: "LocalOTP 1.6.1 · 本地存储 / 可选浏览器同步",
       })
     );
 

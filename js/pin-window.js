@@ -6,7 +6,7 @@
     const mode = document.documentElement.dataset.floating;
     if (mode) document.title = mode === "pip" ? "LocalOTP · 置顶" : "LocalOTP · 常驻小窗";
     let busy = false;
-    button.innerHTML = OTP.icon("pin", 16);
+    button.innerHTML = OTP.icon("pin", 15) + "<span>" + (mode === "pip" ? "取消" : mode === "1" ? "置顶" : "常驻") + "</span>";
     const label = mode === "pip" ? "取消置顶，返回独立小窗" : mode === "1" ? "始终置顶（画中画）" : "固定为独立小窗";
     button.setAttribute("aria-label", label);
     button.setAttribute("data-tip", label);

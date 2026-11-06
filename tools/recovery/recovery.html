@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LocalOTP · 旧数据只读恢复</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-width:380px;background:#edf4fc;color:#263749;font:14px/1.75 system-ui,"Microsoft YaHei",sans-serif}main{max-width:680px;margin:24px auto;padding:24px;background:#fff;border:1px solid #dbe5f0;border-radius:18px}h1{font-size:21px;margin:0 0 12px}p{margin:8px 0}code{font:12px/1.8 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}button{border:1px solid #cbd8e8;border-radius:10px;background:#f6faff;color:#24558d;padding:10px 13px;cursor:pointer;font:inherit}button:disabled{opacity:.45;cursor:default}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.notice{padding:12px;background:#fff8e6;border-radius:10px}.counts{padding:14px;background:#eef6ff;border-radius:10px;margin-top:16px}#status{white-space:pre-wrap;overflow-wrap:anywhere}button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+</style></head><body><main>
+<h1>旧数据只读恢复</h1>
+<p class="notice">本工具不会上传、修改或删除账号，也不会向旧同步空间写入空数据。</p>
+<p><code id="identity"></code></p>
+<p id="status" role="status">正在检查…</p>
+<div class="counts"><p id="local-count">旧本机账号：等待检查</p><p id="sync-count">旧同步缓存账号：等待检查</p></div>
+<div class="actions"><button id="refresh">重新检查</button><button id="export-local" disabled>导出旧本机备份</button><button id="export-sync" disabled>导出旧同步备份</button></div>
+<p>重新加载旧 ID 后，浏览器可能需要时间接收云端数据。这里的零条记录不能证明云端已永久删除。</p>
+<p>导出的文件包含账号密码与 OTP 密钥，请保存在自己的设备上。恢复时在当前 LocalOTP 的“导入备份”中合并。</p>
+</main><script src="expected-id.js"></script><script src="js/util.js"></script><script src="js/totp.js"></script><script src="js/sync.js"></script><script src="recovery.js"></script></body></html>
