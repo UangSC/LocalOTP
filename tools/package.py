@@ -13,9 +13,9 @@ def main():
     args = parser.parse_args()
     output = args.output or root / "dist" / f"LocalOTP-{manifest['version']}.zip"
     files = [root / name for name in ("manifest.json", "README.md", "index.html", "popup.html", "api.html")]
-    for directory, suffixes in (("js", {".js"}), ("styles", {".css"}), ("assets/icons", {".png"})):
+    for directory, suffixes in (("js", {".js", ".LICENSE"}), ("styles", {".css"}), ("assets/icons", {".png"})):
         files.extend(path for path in (root / directory).rglob("*") if path.is_file() and path.suffix in suffixes)
-    files.extend(root / "docs" / name for name in ("architecture.md", "testing.md", "design-system.md", "otp-api.md", "window-and-session.md", "sync-guide.md", "examples/sync-test.txt"))
+    files.extend(root / "docs" / name for name in ("scan-and-import.md", "third-party.md", "architecture.md", "testing.md", "design-system.md", "otp-api.md", "window-and-session.md", "sync-guide.md", "examples/sync-test.txt"))
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, "w", ZIP_DEFLATED) as archive:
         for path in sorted(files):

@@ -273,11 +273,11 @@
     body.append(
       el("p", {
         class: "sheet-footnote",
-        text: `LocalOTP ${global.chrome?.runtime?.getManifest?.().version || "0.9.0"} · 本地存储 / 可选浏览器同步`,
+        text: `LocalOTP ${global.chrome?.runtime?.getManifest?.().version || "1.0.0"} · 本地存储 / 可选浏览器同步`,
       })
     );
 
-    return { body, footer: null, dispose: unsubscribe };
+    return { body, footer: null, dispose() { unsubscribe(); appearance.dispose(); access.dispose(); } };
   }
 
   /* 管理抽屉（导入 / 设置） */

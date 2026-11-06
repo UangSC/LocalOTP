@@ -18,9 +18,16 @@ body {
   height: 100%;
 }
 
+/* 应用页只允许列表和抽屉内部滚动，避免弹窗边缘出现整页滚动条。 */
+html:has(body[data-surface="popup"]),
+html:has(body[data-surface="page"]) {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   overflow: hidden;
+  cursor: default;
   font-family: var(--font-ui);
   font-size: var(--fs-md);
   color: var(--ink);
@@ -226,46 +233,19 @@ select:focus-visible {
 
 /* 条目入场：轻微上浮 + 几乎不可见的放大，收尾极慢 */
 @keyframes lotp-rise {
-  from {
-    opacity: 0;
-    transform: translateY(7px) scale(0.995);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 @keyframes lotp-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  62% {
-    opacity: 1;
-    transform: scale(1.014);
-  }
-  100% {
-    transform: scale(1);
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 /* 六位码换轮：整体下落 + 模糊，像机械计数器翻页 */
 @keyframes lotp-code-in {
-  0% {
-    opacity: 0.15;
-    transform: translateY(-5px);
-    filter: blur(2px);
-  }
-  60% {
-    opacity: 1;
-    filter: blur(0.3px);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 @keyframes lotp-shake {
@@ -321,15 +301,8 @@ select:focus-visible {
 
 /* 复制瞬间验证码轻跳，给"拿到了"一个触觉感 */
 @keyframes lotp-code-pop {
-  0% {
-    transform: none;
-  }
-  34% {
-    transform: translateY(-1.5px) scale(1.05);
-  }
-  100% {
-    transform: none;
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 @keyframes lotp-ripple {
@@ -380,12 +353,8 @@ select:focus-visible {
 
 /* 键盘活动项落定时的轻微"落点"感 */
 @keyframes lotp-settle {
-  0% {
-    transform: scale(1.008);
-  }
-  100% {
-    transform: scale(1);
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 /* 新条目落位：先亮一圈品牌光，再收回常态 */
@@ -401,40 +370,14 @@ select:focus-visible {
 
 /* 头像：复制成功时的一记弹跳（过冲两次，收在 1） */
 @keyframes lotp-avatar-pop {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-  30% {
-    transform: scale(1.18) rotate(-6deg);
-  }
-  56% {
-    transform: scale(0.94) rotate(3deg);
-  }
-  78% {
-    transform: scale(1.05) rotate(-1.5deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 /* 头像：入场时从小弹出来 */
 @keyframes lotp-avatar-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.45) rotate(-16deg);
-  }
-  55% {
-    opacity: 1;
-    transform: scale(1.1) rotate(4deg);
-  }
-  78% {
-    transform: scale(0.97) rotate(-1deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
+  from { opacity: 0.35; }
+  to { opacity: 1; }
 }
 
 /* 头像：复制时掠过的一道高光 */
@@ -514,12 +457,12 @@ select:focus-visible {
   opacity: 0.26;
 }
 
-/* 弹窗外壳：402 × 600，Chromium 弹窗上限内留出舒适合适的呼吸 */
+/* 预览外壳目标 402 × 680；真实工具栏按浏览器可用高度贴边。 */
 .shell {
   position: relative;
   z-index: var(--z-content);
   width: min(402px, 100vw);
-  height: min(600px, calc(100vh - 40px));
+  height: min(680px, calc(100vh - 40px));
   overflow: hidden;
   isolation: isolate;
   border-radius: var(--r-6);
@@ -541,7 +484,7 @@ select:focus-visible {
   }
 }
 
-/* 弹窗形态下把舞台收成 402 × 600 居中，即使是宽屏里的普通标签页也保持比例 */
+/* 弹窗形态下把舞台收成 402 × 680 居中，即使是宽屏里的普通标签页也保持比例 */
 
 
 /* 弹窗外的那行说明文字，纯原型展示用 */
@@ -594,3 +537,8 @@ select:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* 只有可编辑控件使用文本光标；可复制的展示文字仍保持普通箭头。 */
+input:is(:not([type]),[type=text],[type=password],[type=email],[type=search],[type=url],[type=tel],[type=number]):not([readonly]):not(:disabled), textarea:not([readonly]):not(:disabled), [contenteditable="true"] { cursor: text; }
+input[readonly], textarea[readonly], input:disabled, textarea:disabled { cursor: default; }
+a, summary, [role="button"], [role="switch"], select { cursor: pointer; }

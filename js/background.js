@@ -1,8 +1,9 @@
 /* MV3 后台：弹窗关闭后继续同步，失败后由 alarm 重试。 */
 globalThis.window = globalThis;
 importScripts("util.js", "totp.js", "seed.js", "sync.js", "store/security.js", "store/search.js", "store/import.js", "store.js");
-importScripts("otp-input.js", "omnibox.js");
+importScripts("otp-input.js", "omnibox.js", "qr.js");
 importScripts("access-service.js");
+importScripts("scan-background.js");
 const ready = OTP.store.init();
 const ACCESS_KEY = "localotp:access:v1";
 const accessService = OTP.createAccessService({
@@ -49,12 +50,13 @@ function openManagement(message, caller) {
 }
 function openFloating(ticket) {
   const task = floatingChain.catch(() => {}).then(async () => {
+    await OTP.rememberScanWindow();
     const key = "localotp:floating-window:v1";
     const id = (await chrome.storage.session.get(key))[key];
     if (Number.isInteger(id)) {
       try { await chrome.windows.update(id, { focused: true }); return { ok: true, reused: true }; } catch (_) {}
     }
-    const window = await chrome.windows.create({ url: chrome.runtime.getURL("popup.html") + "?floating=1#unlock=" + encodeURIComponent(ticket), type: "popup", width: 430, height: 680, focused: true });
+    const window = await chrome.windows.create({ url: chrome.runtime.getURL("popup.html") + "?floating=1#unlock=" + encodeURIComponent(ticket), type: "popup", width: 430, height: 740, focused: true });
     await chrome.storage.session.set({ [key]: window.id });
     return { ok: true };
   });
@@ -79,10 +81,16 @@ function schedule() {
   timer = setTimeout(synchronize, 1100);
 }
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
+  if (message?.type === "localotp:scan-page") {
+    OTP.scanPageRequest(message,sender,accessService).then(reply,()=>reply({ok:false,error:"扫码操作失败，请重试"}));
+    return true;
+  }
   if (message?.type === "localotp:access") {
     const caller = OTP.accessCaller(message, sender, chrome.runtime.id);
     if (!caller) { reply({ ok: false, code: "INVALID_CONTEXT", error: "无法识别当前扩展页面，请重新加载扩展" }); return; }
-    const task = message.action === "page"
+    const task = message.action === "scan-capture"
+      ? OTP.scanBackground(message, caller, accessService, sender)
+      : message.action === "page"
       ? openManagement(message, caller)
       : message.action === "float"
       ? accessService.request({ ...message, action: "ticket" }, caller).then(result => result.ok ? openFloating(result.ticket).catch(() => ({ ok: false, code: "WINDOW_CREATE_FAILED", error: "浏览器未能创建独立窗口，请检查浏览器策略后重试" })) : result)

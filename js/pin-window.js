@@ -32,7 +32,7 @@
       let pip;
       try {
         // 必须在点击栈里先请求画中画，不能先等待后台票据而丢失用户激活。
-        pip = await global.documentPictureInPicture.requestWindow({ width: 402, height: 600 });
+        pip = await global.documentPictureInPicture.requestWindow({ width: 402, height: 680 });
         pip.document.title = "LocalOTP · 始终置顶";
         const ticket = await OTP.access.ticket();
         const frame = pip.document.createElement("iframe");

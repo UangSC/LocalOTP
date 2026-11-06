@@ -1,130 +1,91 @@
-/* 访问控制设置。 */
+/* 密码验证、免密期限与闲置锁定；偏好只作用于本机。 */
 (function (global) {
   "use strict";
   const OTP = global.OTP, store = OTP.store, ui = OTP.ui;
   const { el, icon } = OTP;
-  const { group, setRow, changed } = OTP.sheetUI;
+  const { group, setRow } = OTP.sheetUI;
   OTP.sheetParts.accessSettings = function () {
-    const settings = store.settings(), security = store.securityInfo();
-    const body = document.createDocumentFragment();
-    /* ---- 访问门禁 ---- */
-
-    const lockSeg = ui.segmented({
-      active: String(settings.lockAfter),
-      className: "seg-sm",
-      items: [
-        { id: "1", label: "1 分" },
-        { id: "5", label: "5 分" },
-        { id: "15", label: "15 分" },
-        { id: "0", label: "关闭" },
-      ],
-      onChange: (id) => {
-        store.patchSettings({ lockAfter: Number(id) });
-        ui.toast(Number(id) ? `闲置 ${id} 分钟后自动锁定` : "已关闭自动锁定");
-      },
-    });
-
-    const pwdDesc = security
-      ? security.algorithm === "PBKDF2-SHA256"
-        ? `已设置 · PBKDF2 ${Math.round(security.iterations / 1000)}k 轮加盐派生`
-        : "已设置 · 当前环境缺少 Web Crypto，摘要强度较弱"
-      : "尚未设置";
-
-    let rememberBusy = false;
-    const rememberToggle = el("button", { id: "remember-toggle", class: "toggle", type: "button", role: "switch",
-      "aria-label": "短时免密", "aria-checked": String(!!settings.rememberMinutes), disabled: !OTP.access.available,
-      onclick: () => changeRemember(store.settings().rememberMinutes ? 0 : 5) });
-    const rememberSeg = ui.segmented({ active: String(settings.rememberMinutes || 5), className: "seg-sm",
-      items: [{ id: "1", label: "1 分钟" }, { id: "5", label: "5 分钟" }, { id: "15", label: "15 分钟" }],
-      onChange: value => changeRemember(Number(value)) });
-    const rememberDuration = el("div", { class: "remember-duration", hidden: !settings.rememberMinutes },
-      el("span", { text: "密码验证后有效期" }), rememberSeg.node);
-    function updateRemember() {
-      const minutes = store.settings().rememberMinutes;
-      rememberToggle.setAttribute("aria-checked", String(!!minutes));
-      rememberToggle.disabled = rememberBusy || !OTP.access.available;
-      rememberDuration.hidden = !minutes;
-      rememberSeg.setActive(String(minutes || 5));
+    let busy = false;
+    const settings = store.settings();
+    const status = el("p", { class: "access-summary", role: "status" });
+    const permanent = el("button", { id: "password-disabled-toggle", class: "toggle", type: "button", role: "switch",
+      "aria-label": "永久关闭密码验证", onclick: changePermanent });
+    const remember = ui.segmented({ active: String(settings.rememberMinutes), className: "seg-sm",
+      items: [{ id: "1", label: "1 分" }, { id: "5", label: "5 分" }, { id: "15", label: "15 分" }, { id: "0", label: "每次验证" }],
+      onChange: value => saveRemember(Number(value)) });
+    remember.node.id = "remember-duration";
+    const idle = ui.segmented({ active: String(settings.lockAfter), className: "seg-sm",
+      items: [{ id: "1", label: "1 分" }, { id: "5", label: "5 分" }, { id: "15", label: "15 分" }, { id: "0", label: "关闭" }],
+      onChange: value => {
+        if (busy || store.settings().passwordRequired === false) return;
+        store.patchSettings({ lockAfter: Number(value) });
+        ui.toast(Number(value) ? `闲置 ${value} 分钟后锁定（免密期结束后生效）` : "已关闭闲置自动锁定");
+      } });
+    const timing = el("div", { class: "access-timing" },
+      setRow({ icon: "clock", label: "重开免密时长", desc: "从输入密码起计时，重开不会延长 · 默认 15 分钟", control: remember.node }),
+      setRow({ icon: "lock", label: "闲置自动锁定", desc: "免密期结束后，按无操作时间锁定", control: idle.node }));
+    const lockButton = el("button", { class: "btn btn-ghost btn-xs", type: "button", onclick: () => { ui.closeSheet(true); OTP.app.lock(); } });
+    function refresh() {
+      const s = store.settings(), off = s.passwordRequired === false;
+      permanent.setAttribute("aria-checked", String(off));
+      permanent.disabled = busy;
+      timing.hidden = off;
+      timing.inert = busy;
+      remember.setActive(String(s.rememberMinutes));
+      idle.setActive(String(s.lockAfter));
+      status.textContent = off ? "永久免密码已开启 · 重启浏览器后仍可直接进入" : s.rememberMinutes
+        ? `验证一次，${s.rememberMinutes} 分钟内重开无需密码 · 浏览器重启后重新验证` : "每次重新打开均验证密码 · 已打开的页面按闲置设置锁定";
+      lockButton.innerHTML = icon("lock", 12) + `<span>${off ? "恢复验证并锁定" : "立即锁定"}</span>`;
     }
-    async function changeRemember(next) {
-      if (rememberBusy || !OTP.access.available) return;
-      const previous = store.settings().rememberMinutes || 0;
-      if (next === previous) return;
-      rememberBusy = true; updateRemember();
+    async function saveRemember(next) {
+      if (busy || store.settings().passwordRequired === false) return;
+      const previous = store.settings().rememberMinutes;
+      busy = true; refresh();
       try {
-        if (next > previous) {
-          const ok = await ui.confirm({ title: "开启短时免密？", icon: "shield", danger: true,
-            message: `验证密码后的 <b>${next} 分钟</b>内，重新打开插件无需输入密码。<br>任何能使用当前浏览器的人都可能查看或复制账号密码与验证码。<br>请仅在可信的个人设备上启用；手动锁定、修改密码或结束浏览器会话会使授权失效。`,
-            confirmText: "我了解风险，开启", cancelText: "取消" });
-          if (!ok) return;
-        }
         store.patchSettings({ rememberMinutes: next });
         await store.persist();
-        const current = await OTP.access.remember();
-        ui.toast(!next ? "短时免密已关闭" : current && OTP.access.graceActive ? `已开启 ${next} 分钟免密，不随重开续期` : "已开启，下次输入密码后生效");
+        if (OTP.access.available) await OTP.access.remember();
+        ui.toast(next ? `已设为 ${next} 分钟免密` : "已设为每次验证");
       } catch (_) {
         store.patchSettings({ rememberMinutes: previous });
         await store.persist().catch(() => {});
-        ui.toast("设置保存失败，请重试", "bad");
-      } finally { rememberBusy = false; updateRemember(); }
+        ui.toast("设置保存失败，请重新解锁后重试", "bad");
+      } finally { busy = false; refresh(); }
     }
-
-    body.append(
-      group("访问门禁", [
-        setRow({
-          icon: "lock",
-          label: "管理密码",
-          desc: pwdDesc,
-          control: el("button", {
-            class: "btn btn-ghost btn-xs",
-            type: "button",
-            text: security ? "修改" : "设置",
-            onclick: () => OTP.sheets.openPasswordFlow(),
-          }),
-        }),
-        setRow({
-          icon: "clock",
-          label: "闲置自动锁定",
-          desc: "无操作达到时长后重新上锁",
-          control: lockSeg.node,
-        }),
-        setRow({ icon: "keyhole", label: "短时免密", desc: OTP.access.available
-          ? "默认关闭 · 有效期内重开免密码，且暂缓闲置锁定"
-          : "请在实际浏览器扩展中使用，会话不写入本地磁盘", control: rememberToggle }),
-        rememberDuration,
-        setRow({
-          icon: "keyhole",
-          label: "立即锁定",
-          desc: "清除内存中的明文显示状态",
-          control: el("button", {
-            class: "btn btn-ghost btn-xs",
-            type: "button",
-            html: icon("lock", 12, "i-sm") + "<span>锁定</span>",
-            onclick: () => {
-              ui.closeSheet(true);
-              OTP.app.lock();
-            },
-          }),
-        }),
-      ])
-    );
-
-    /* ---- 分类 ---- */
-
-    const catCount = store.categories().length;
-    body.append(
-      group("分类", [
-        setRow({
-          icon: "tag",
-          label: "管理分类",
-          desc: `${catCount} 个分类 · 只用于筛选，随备份一起导出`,
-          onTap: () => OTP.sheets.openCategoryManager(),
-          control: el("span", { class: "set-value", html: icon("chevron-right", 14) }),
-        }),
-      ])
-    );
-
-
-    return {body, refresh() { updateRemember(); }};
+    async function changePermanent() {
+      if (busy) return;
+      const off = store.settings().passwordRequired !== false;
+      busy = true; refresh();
+      try {
+        if (off && !await ui.confirm({ title: "永久关闭密码验证？", icon: "shield", danger: true,
+          message: "开启后，任何能使用当前浏览器的人都能查看账号、密码和验证码，重启浏览器也无需验证。<br>已有管理密码会保留，便于随时恢复验证。",
+          confirmText: "关闭密码验证" })) return;
+        store.patchSettings({ passwordRequired: !off });
+        await store.persist();
+        if (off) {
+          if (OTP.access.available && !await OTP.access.restore()) throw new Error("授权失败");
+          ui.toast("已开启永久免密码");
+        } else {
+          ui.closeSheet(true);
+          await OTP.app.lock();
+        }
+      } catch (_) {
+        store.patchSettings({ passwordRequired: off });
+        await store.persist().catch(() => {});
+        ui.toast("设置保存失败，请重试", "bad");
+      } finally { busy = false; refresh(); }
+    }
+    const body = el("div", {}, group("密码与访问", [
+      status,
+      el("p", { class: "access-sensitive-note", text: "查看、复制密码及导出备份，每 1 小时验证一次；永久免密码模式下也适用。" }),
+      setRow({ icon: "keyhole", label: "永久关闭密码验证", desc: "仅影响本机 · 可随时恢复", control: permanent }),
+      timing,
+      setRow({ icon: "key", label: "管理密码", desc: "已设置 · 用于界面解锁，账号数据未加密", control: el("button", {
+        class: "btn btn-ghost btn-xs", type: "button", text: "修改", onclick: () => OTP.sheets.openPasswordFlow() }) }),
+      setRow({ icon: "lock", label: "锁定账号库", desc: "需要时立即恢复密码保护", control: lockButton }),
+    ]), group("分类", [setRow({ icon: "tag", label: "管理分类", desc: `${store.categories().length} 个分类 · 随备份导出`,
+      onTap: () => OTP.sheets.openCategoryManager(), control: el("span", { class: "set-value", html: icon("chevron-right", 14) }) })]));
+    refresh();
+    return { body, refresh, dispose() { remember.destroy(); idle.destroy(); } };
   };
 })(globalThis);

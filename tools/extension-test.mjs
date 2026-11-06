@@ -3,8 +3,8 @@ import { spawn } from "node:child_process";
 import assert from "node:assert/strict";
 import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOnExit } from "./cdp.mjs";
 const profile = createBrowserProfile("extension-");
-const port = 9368;
-const child = spawn(findBrowser(), ["--headless=new", "--no-first-run", "--no-default-browser-check",
+const port = 15000+Math.floor(Math.random()*20000);
+const child = spawn(findBrowser(), ["--headless=new", "--edge-skip-compat-layer-relaunch", "--no-first-run", "--no-default-browser-check",
   `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${process.cwd()}`, "about:blank"],
   { stdio: "ignore", windowsHide: true });
 cleanProfileOnExit(child, profile);

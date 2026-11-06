@@ -66,6 +66,8 @@
   async function copyField(account, which) {
     if (runtime.lockNode || runtime.transitioning) return false;
     const value = which === "email" ? account.email : account.password;
+    if (which === "password" && !await OTP.sensitive.ensure("复制账号密码")) return false;
+    if (runtime.lockNode || runtime.transitioning) return false;
     const ok = await OTP.copyText(value);
     if (runtime.lockNode || runtime.transitioning) return false;
     if (!ok) {
@@ -175,8 +177,8 @@
         header: account.email,
         items: [
           { label: "复制验证码", icon: "shield", key: "↵", onSelect: () => copyCode(account, node, null) },
-          { label: "复制邮箱", icon: "mail", onSelect: () => copyField(account, "email") },
-          { label: "复制密码", icon: "key", onSelect: () => copyField(account, "password") },
+          ...(account.email ? [{ label: "复制邮箱", icon: "mail", onSelect: () => copyField(account, "email") }] : []),
+          ...(account.password ? [{ label: "复制密码", icon: "key", onSelect: () => copyField(account, "password") }] : []),
           { sep: true },
           { label: "编辑", icon: "edit", key: "E", onSelect: () => OTP.sheets.openEditor(account) },
           {
@@ -438,7 +440,11 @@
     ui.mount(els.app);
     if ($("quick-generator")) runtime.quickOtp = OTP.mountOtpWidget($("quick-generator"), { collapsible: true });
     if ($("pin-window-btn")) OTP.mountPinWindow($("pin-window-btn"));
-    OTP.access.onRevoked(() => { if (!runtime.lockNode && !runtime.transitioning) lock({ revoke: false }); });
+    OTP.access.onRevoked(() => {
+      if (store.settings().passwordRequired === false) { OTP.access.restore(); return; }
+      if (!runtime.lockNode && !runtime.transitioning) lock({ revoke: false });
+    });
+    $("scan-btn")?.addEventListener("click", () => { if (!runtime.lockNode && !runtime.transitioning) OTP.scan.open(); });
     // macOS 使用系统惯用的 Command 提示，键盘处理同时兼容 Ctrl / Meta。
     const mac = /Mac|iPhone|iPad/.test(navigator.platform || "");
     for (const hint of document.querySelectorAll("kbd")) {

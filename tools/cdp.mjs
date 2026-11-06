@@ -141,16 +141,17 @@ export class CDP {
 }
 
 /** 启动无头浏览器，返回 { process, port } */
-export async function launchBrowser(binary, port, { gpu = false } = {}) {
+export async function launchBrowser(binary, port, { gpu = false, hideScrollbars = true } = {}) {
+  port = 15000 + Math.floor(Math.random() * 20000);
   const profile = createBrowserProfile("cdp-");
   const child = spawn(
     binary,
     [
-      "--headless=new",
+      "--headless=new", "--edge-skip-compat-layer-relaunch",
       ...(gpu ? [] : ["--disable-gpu"]),
       "--no-first-run",
       "--no-default-browser-check",
-      "--hide-scrollbars",
+      ...(hideScrollbars ? ["--hide-scrollbars"] : []),
       "--force-device-scale-factor=2",
       "--remote-debugging-port=" + port,
       "--user-data-dir=" + profile,
@@ -206,4 +207,25 @@ export async function setViewport(cdp, width, height, scale = 2) {
 export async function goto(cdp, url) {
   await cdp.send("Page.navigate", { url });
   await sleep(520);
+}
+
+/* 通过调试协议检查封闭 Shadow DOM，不为自动化把网页扫码界面开放给站点脚本。 */
+export async function shadowCall(cdp, hostId, selector, functionDeclaration, args = []) {
+  const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
+  function find(node) {
+    const attrs = node.attributes || [];
+    if (attrs.some((value, i) => i % 2 === 0 && value === 'id' && attrs[i + 1] === hostId)) return node;
+    for (const child of [...(node.children || []), ...(node.shadowRoots || [])]) { const found = find(child); if (found) return found; }
+  }
+  const host = find(root);
+  if (!host?.shadowRoots?.[0]) throw new Error('未找到蒙版：' + hostId);
+  const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: host.shadowRoots[0].nodeId, selector });
+  if (!nodeId) throw new Error('蒙版中缺少控件：' + selector);
+  const { object } = await cdp.send('DOM.resolveNode', { nodeId });
+  try {
+    const result = await cdp.send('Runtime.callFunctionOn', { objectId: object.objectId, functionDeclaration,
+      arguments: args.map(value => ({ value })), returnByValue: true, awaitPromise: true, userGesture: true });
+    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text);
+    return result.result?.value;
+  } finally { await cdp.send('Runtime.releaseObject', { objectId: object.objectId }).catch(() => {}); }
 }

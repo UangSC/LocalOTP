@@ -9,7 +9,7 @@
       const ring = OTP.ui.createRing({ period: account.period });
       const isPage = document.body.dataset.surface === "page";
 
-      const emailNode = el("span", { class: "row-email truncate", text: account.email });
+      const emailNode = el("span", { class: "row-email truncate", text: account.email || account.issuer || "未命名 OTP" });
       const issuerNode = el("span", { class: "row-issuer truncate", text: issuerText(account) });
 
       const tools = buildTools(account);
@@ -22,7 +22,7 @@
           tabindex: "0",
           role: "button",
           dataset: { id: account.id },
-          "aria-label": account.email + "，点击复制验证码",
+          "aria-label": (account.email || account.issuer || "未命名 OTP") + "，点击复制验证码",
         },
         OTP.avatar(account),
         el(
@@ -88,7 +88,7 @@
     function buildQuick(account) {
       const ring = OTP.ui.createRing({ period: account.period, cls: "ring-sm" });
 
-      const emailNode = el("span", { class: "row-email truncate", text: account.email });
+      const emailNode = el("span", { class: "row-email truncate", text: account.email || account.issuer || "未命名 OTP" });
       const issuerNode = el("span", { class: "row-issuer truncate", text: issuerText(account) });
       const codeNode = el("span", { class: "code", text: "· · ·" });
       const codeIco = el("span", { class: "qact-ico", html: icon("copy", 13) });
@@ -101,7 +101,7 @@
         {
           class: "qact qact-code",
           type: "button",
-          "aria-label": account.email + "，复制验证码",
+          "aria-label": (account.email || account.issuer || "未命名 OTP") + "，复制验证码",
           "data-tip": "复制验证码",
           onclick: async (event) => {
             event.stopPropagation();
@@ -120,6 +120,9 @@
       passBtn = quickButton("key", "密码", (event) =>
         handleFieldCopy(account, "password", passBtn, event)
       );
+
+      emailBtn.hidden = !account.email;
+      passBtn.hidden = !account.password;
 
       const pin = el("button", {
         class: "q-pin",
@@ -141,7 +144,7 @@
           tabindex: "0",
           role: "button",
           dataset: { id: account.id },
-          "aria-label": account.email + "，单击复制验证码",
+          "aria-label": (account.email || account.issuer || "未命名 OTP") + "，单击复制验证码",
         },
         el(
           "div",
@@ -193,7 +196,7 @@
       const ring = OTP.ui.createRing({ period: account.period, cls: "ring-sm" });
 
       const nameNode = el("span", { class: "card-name truncate", text: issuerText(account) });
-      const emailNode = el("span", { class: "card-email truncate", text: account.email });
+      const emailNode = el("span", { class: "card-email truncate", text: account.email || account.issuer || "未命名 OTP" });
       const codeNode = el("span", { class: "code card-code", text: "· · ·" });
       const tools = buildTools(account, "card-tools");
 
@@ -204,7 +207,7 @@
           tabindex: "0",
           role: "button",
           dataset: { id: account.id },
-          "aria-label": account.email + "，点击复制验证码",
+          "aria-label": (account.email || account.issuer || "未命名 OTP") + "，点击复制验证码",
         },
         el(
           "span",
@@ -231,6 +234,8 @@
       const key = miniButton("key", "复制密码", (event) =>
         handleFieldCopy(account, "password", key, event)
       );
+      mail.hidden = !account.email;
+      key.hidden = !account.password;
       const node = el("span", { class: className || "row-tools" }, mail, key);
       if (className === "card-tools") node.append(miniButton("more", "更多操作", (event) => {
         st.actions.menu(account, node.closest(".item"), event);

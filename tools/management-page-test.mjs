@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOnExit } from "./cdp.mjs";
 
-const profile = createBrowserProfile("management-"), port = 9448;
-const child = spawn(findBrowser(), ["--headless=new", "--disable-sync", "--no-first-run", "--no-default-browser-check",
+const profile = createBrowserProfile("management-"), port = 15000+Math.floor(Math.random()*20000);
+const child = spawn(findBrowser(), ["--headless=new", "--edge-skip-compat-layer-relaunch", "--disable-sync", "--no-first-run", "--no-default-browser-check",
   `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${process.cwd()}`, "about:blank"],
 { stdio: "ignore", windowsHide: true });
 cleanProfileOnExit(child, profile);
@@ -39,6 +39,7 @@ try {
   worker = await connect(sw.webSocketDebuggerUrl); popup = await connect(list.find(target => target.type === "page").webSocketDebuggerUrl);
   await popup.send("Page.navigate", { url: base + "popup.html" }); await until(popup, "!!OTP.store.state.ready");
   await evaluate(popup, "OTP.store.setPassword('management-test')");
+  await evaluate(popup, "OTP.store.patchSettings({rememberMinutes:0});OTP.store.persist()");
   await popup.send("Page.reload"); await unlock(popup);
   check("免密关闭且未增加 tabs 权限", await evaluate(popup, "OTP.store.settings().rememberMinutes===0 && !chrome.runtime.getManifest().permissions.includes('tabs')"));
   const first = await evaluate(popup, "OTP.app.openFullPage()");

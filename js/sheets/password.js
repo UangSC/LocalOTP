@@ -110,7 +110,7 @@
 
     ui.openSheet({
       title: hasPwd ? "修改管理密码" : "设置管理密码",
-      subtitle: hasPwd ? "需要先验证当前密码" : "之后每次打开都需要输入",
+      subtitle: hasPwd ? "需要先验证当前密码" : "默认验证后 15 分钟内重开免密",
       body,
       footer: submitBtn,
     });

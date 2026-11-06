@@ -130,6 +130,10 @@ body[data-surface="page"][data-locked="1"] .page {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  /* 位移、焦点环和阴影留在滚动区内，避免触发横向滚动或贴边裁切。 */
+  padding: 4px 8px 10px;
+  margin: 0 -8px;
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
@@ -143,6 +147,7 @@ body[data-surface="page"][data-locked="1"] .page {
 
 .nav-item {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 9px;
   height: 34px;
@@ -185,7 +190,7 @@ body[data-surface="page"][data-locked="1"] .page {
 }
 
 .nav-item:active {
-  transform: scale(0.985);
+  transform: none;
 }
 
 .nav-item.is-on {

@@ -21,7 +21,6 @@
     linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
   transition: opacity var(--t-4) var(--e-out), transform var(--t-4) var(--e-out),
     filter var(--t-4) var(--e-out);
-  will-change: opacity, transform;
 }
 
 /* 卡片本体：弹窗里它是透明的（负责布局），管理页里它是一张真正的浮层卡 */
@@ -110,7 +109,7 @@ body[data-surface="page"] .lock-foot {
 /* 解锁瞬间：整块淡出 + 微微放大 + 失焦 */
 .lock.is-out {
   opacity: 0;
-  transform: scale(1.035);
+  transform: none;
 
   pointer-events: none;
 }
@@ -244,7 +243,7 @@ body[data-surface="page"] .lock-foot {
 }
 
 .eye:active {
-  transform: scale(0.88);
+  transform: none;
 }
 
 .eye .i {
@@ -408,8 +407,7 @@ body[data-surface="page"] .lock-foot {
   inset: 0;
   z-index: var(--z-veil);
   background: var(--veil);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: none;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--t-3) var(--e-out);
@@ -422,7 +420,7 @@ body[data-surface="page"] .lock-foot {
 
 .veil[data-layer="dialog"] {
   z-index: calc(var(--z-lock) + 1);
-  backdrop-filter: blur(3px);
+  backdrop-filter: none;
 }
 
 .veil[data-layer="dialog"].is-on ~ .dialog {
@@ -445,19 +443,20 @@ body[data-surface="page"] .lock-foot {
   border-radius: var(--r-6) var(--r-6) 0 0;
   background: var(--surface);
   box-shadow: 0 -20px 54px -22px rgba(15, 18, 40, 0.45), 0 0 0 1px var(--line-soft);
-  transform: translateY(101%);
+  clip-path: inset(100% 0 0 0);
+  opacity: 0;
   /* 关着时必须真的不画：只把它 transform 挪出去的话，它那圈投影会渗回页面
      （宽屏右侧那道"边框阴影"就是抽屉的 box-shadow） */
   visibility: hidden;
-  transition: transform var(--t-4) var(--e-out), visibility 0s linear var(--t-4);
-  will-change: transform;
+  transition: clip-path var(--t-3) var(--e-out), opacity var(--t-2), visibility 0s linear var(--t-4);
   overflow: hidden;
 }
 
 .sheet.is-open {
-  transform: translateY(0);
+  clip-path: inset(0);
+  opacity: 1;
   visibility: visible;
-  transition: transform var(--t-4) var(--e-out), visibility 0s linear 0s;
+  transition: clip-path var(--t-3) var(--e-out), opacity var(--t-2), visibility 0s linear 0s;
 }
 
 /* 宽屏管理页里，抽屉从右侧出来，成为设置面板 */
@@ -468,12 +467,12 @@ body[data-surface="page"] .sheet {
   width: min(480px, 100%);
   max-height: none;
   border-radius: var(--r-6) 0 0 var(--r-6);
-  transform: translateX(101%);
+  clip-path: inset(0 0 0 100%);
   box-shadow: -20px 0 54px -26px rgba(15, 18, 40, 0.35), 0 0 0 1px var(--line-soft);
 }
 
 body[data-surface="page"] .sheet.is-open {
-  transform: translateX(0);
+  clip-path: inset(0);
 }
 
 /* 宽屏下抽屉更高，内容顶部对齐更舒服 */
@@ -735,7 +734,7 @@ body[data-surface="page"] .sheet-foot {
 }
 
 .icon-option:active {
-  transform: scale(0.93);
+  transform: none;
 }
 
 .icon-option.is-on {
@@ -1319,7 +1318,7 @@ body[data-surface="page"] .sheet-foot {
   border-radius: var(--r-5);
   background: var(--surface);
   box-shadow: var(--shadow-l);
-  transform: translate(-50%, -50%) scale(0.94);
+  transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--t-3) var(--e-out), transform var(--t-4) var(--e-spring);
@@ -1328,7 +1327,7 @@ body[data-surface="page"] .sheet-foot {
 
 .dialog.is-open {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, -50%);
   pointer-events: auto;
 }
 
@@ -1399,7 +1398,7 @@ body[data-surface="page"] .sheet-foot {
   border: 1px solid var(--line);
   box-shadow: var(--shadow-l);
   opacity: 0;
-  transform: scale(0.96);
+  transform: none;
   transform-origin: top right;
   pointer-events: none;
   transition: opacity var(--t-2) var(--e-out), transform var(--t-3) var(--e-spring);
@@ -1407,7 +1406,7 @@ body[data-surface="page"] .sheet-foot {
 
 .menu.is-open {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
   pointer-events: auto;
 }
 
@@ -1507,12 +1506,11 @@ body[data-surface="page"] .sheet-foot {
   letter-spacing: 0.006em;
   box-shadow: 0 16px 34px -14px rgba(8, 10, 22, 0.6);
   animation: lotp-rise var(--t-4) var(--e-spring);
-  will-change: transform, opacity;
 }
 
 .toast.is-out {
   opacity: 0;
-  transform: translateY(6px) scale(0.97);
+  transform: none;
   transition: opacity var(--t-2), transform var(--t-3) var(--e-out);
 }
 

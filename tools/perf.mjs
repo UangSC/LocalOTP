@@ -16,7 +16,8 @@ import { spawn } from "node:child_process";
 import { CDP, evaluate, findBrowser, goto, sleep, startServer, createBrowserProfile, cleanProfileOnExit } from "./cdp.mjs";
 
 const software = process.argv.includes("--sw");
-const PORT = 9391;
+const headed = process.argv.includes("--headed");
+const PORT = 15000+Math.floor(Math.random()*20000);
 
 const binary = findBrowser();
 if (!binary) {
@@ -29,9 +30,13 @@ const base = `http://127.0.0.1:${port}`;
 
 const profile = createBrowserProfile("perf-");
 const flags = [
-  "--headless=new",
+  ...(headed ? [] : ["--headless=new"]),
+  "--edge-skip-compat-layer-relaunch",
   "--no-first-run",
   "--no-default-browser-check",
+  "--disable-backgrounding-occluded-windows",
+  "--disable-renderer-backgrounding",
+  "--disable-features=CalculateNativeWinOcclusion",
   "--hide-scrollbars",
   "--remote-debugging-port=" + PORT,
   "--user-data-dir=" + profile,
@@ -40,6 +45,7 @@ const flags = [
 if (software) flags.splice(1, 0, "--disable-gpu");
 
 const child = spawn(binary, flags, { stdio: "ignore", windowsHide: true });
+process.on("exit", () => child.kill());
 cleanProfileOnExit(child, profile);
 
 let target = null;
@@ -62,6 +68,7 @@ if (!target) {
 }
 
 const cdp = await CDP.connect(target.webSocketDebuggerUrl);
+await cdp.send("Page.bringToFront");
 await cdp.send("Page.enable");
 await cdp.send("Runtime.enable");
 await cdp.send("Emulation.setDeviceMetricsOverride", {
@@ -137,6 +144,7 @@ for (let i = 0; i < 60; i++) {
     startT = value;
     break;
   }
+  if (await evaluate(cdp, "!document.querySelector('.lock') && !!document.querySelector('#screen.is-in')")) break;
 }
 await sleep(900);
 
@@ -164,9 +172,9 @@ const stats = await evaluate(
 );
 
 console.log("");
-console.log(`模式：${software ? "软件光栅（--disable-gpu，最差情况）" : "启用 GPU 的无头 Edge"}`);
+console.log(`模式：${software ? "软件光栅（--disable-gpu，最差情况）" : headed ? "桌面 Edge" : "启用 GPU 的无头 Edge"}`);
 console.log(`基线（纯色块同款动画）：${baseline ? baseline.fps + " fps / " + baseline.avgMs + "ms 平均帧" : "—"}`);
-console.log(`解锁展开动画：        ${stats ? stats.fps + " fps / P95 " + stats.p95Fps + " fps / 最差 " + stats.worstMs + "ms" : "—"}`);
+console.log(`解锁展开动画：        ${stats ? stats.fps + " fps / P95 " + stats.p95Fps + " fps / 最差 " + stats.worstMs + "ms" : "首次直接呈现，不播放整页动画"}`);
 console.log("");
 
 // 连续往返：覆盖锁屏与热解锁，按完整调用窗口采样，含准备时间。
@@ -199,4 +207,4 @@ cdp.close();
 child.kill();
 server.close();
 
-if (!stats) process.exitCode = 1;
+if (!roundTrips.length || roundTrips.some(sample => !Number.isFinite(sample.fps))) process.exitCode = 1;

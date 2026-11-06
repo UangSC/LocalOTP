@@ -36,22 +36,16 @@
       const items = visibleItems();
       return items.map(({ref}, index) => {
         return trackMotion(ref.node, [
-          { opacity: .001, transform: "translateY(22px)" },
-          { opacity: 1, transform: "translateY(-3px)", offset: .76 },
-          { opacity: 1, transform: "none" },
-        ], { duration: options.duration || 480, delay: (options.delay || 0) + Math.min(index, 12) * (options.step || 28), easing: "cubic-bezier(.16,1,.3,1)" });
+          { opacity: 0 },
+          { opacity: 1 },
+        ], { duration: options.duration || 220, delay: (options.delay || 0) + Math.min(index, 12) * (options.step || 16), easing: "cubic-bezier(.16,1,.3,1)" });
       });
     }
-    function prepareMotion() {
-      const nodes = visibleItems().map(({ref}) => ref.node);
-      nodes.forEach(node => { node.style.willChange = "transform, opacity"; });
-      return () => nodes.forEach(node => { node.style.willChange = ""; });
-    }
+    function prepareMotion() { return () => {}; }
     function transitionLayout(commit) {
       cancelMotion();
       if (OTP.reduceMotion() || document.hidden || !st.container.animate) { commit(); return; }
       const before = visibleItems();
-      const positions = new Map(before.map(({ref, rect}) => [ref.acc.id, rect]));
       const viewport = st.viewport.getBoundingClientRect();
       const layer = el("div", { class: "layout-ghost", "aria-hidden": "true", inert: true });
       // 只复制可见项作为 180ms 离场快照，不复制输入框或全量账号库。
@@ -65,18 +59,14 @@
       st.viewport.append(layer);
       motionLayers.add(layer);
       commit();
-      const outgoing = trackMotion(layer, [{opacity: .85, transform:"none"}, {opacity:0, transform:"translateY(14px) scale(.975)"}],
-        {duration:180, easing:"cubic-bezier(.4,0,1,1)"});
+      const outgoing = trackMotion(layer, [{opacity: .8}, {opacity:0}],
+        {duration:120, easing:"cubic-bezier(.4,0,1,1)"});
       outgoing.finished.catch(() => {}).finally(() => { layer.remove(); motionLayers.delete(layer); });
       visibleItems().forEach(({ref, rect}, index) => {
-        const previous = positions.get(ref.acc.id);
-        const dx = previous ? OTP.clamp(previous.left - rect.left, -180, 180) : 0;
-        const dy = previous ? OTP.clamp(previous.top - rect.top, -100, 100) : 24;
         trackMotion(ref.node, [
-          {opacity:0, transform:`translate(${dx}px,${dy}px) scale(.94)`},
-          {opacity:1, transform:"translateY(-2px) scale(1.008)", offset:.8},
-          {opacity:1, transform:"none"},
-        ], {duration:520, delay:65 + Math.min(index,12)*22, easing:"cubic-bezier(.16,1,.3,1)"});
+          {opacity:0},
+          {opacity:1},
+        ], {duration:240, delay:35 + Math.min(index,8)*14, easing:"cubic-bezier(.16,1,.3,1)"});
       });
     }
 

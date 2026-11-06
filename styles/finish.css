@@ -37,11 +37,11 @@
 }
 .item:hover::before { opacity: 1; }
 .item:hover {
-  transform: translateY(-3px);
+  transform: none;
   border-color: var(--brand-line);
   box-shadow: inset 0 1px 0 var(--card-glint), 0 14px 28px -16px var(--brand-glow), 0 3px 8px -4px rgba(35,30,80,.15);
 }
-.item:active { transform: translateY(-1px) scale(.985); transition-duration: 100ms; }
+.item:active { transform: none; transition-duration: 100ms; }
 .item.is-match::before {
   inset: 0; width: auto; height: auto; translate: none; border-radius: inherit;
   background: radial-gradient(280px circle at 0 50%, var(--brand-halo), transparent);
@@ -53,12 +53,11 @@
   isolation: isolate;
   overflow: hidden;
   border-radius: 12px;
-  transition: transform 380ms var(--e-spring), box-shadow 260ms;
+  transition: box-shadow 260ms;
 }
 .avatar-letter { position: relative; z-index: 1; font-family: var(--font-ui); font-weight: 650; letter-spacing: -.035em; }
-.item:hover .avatar { transform: translateY(-2px) rotate(-4deg) scale(1.07); }
-.item:active .avatar { transform: scale(.94) rotate(0); }
-.item.is-copied .avatar { animation: lotp-avatar-pop 620ms var(--e-spring); }
+.item:hover .avatar, .item:active .avatar { transform: none; }
+.item.is-copied .avatar { animation: none; }
 .layout-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 4; }
 .layout-ghost .item { pointer-events: none; }
 
@@ -82,8 +81,8 @@ body[data-surface="page"] .card-top { gap: 11px; }
 body[data-surface="page"] .card-name { font-size: 14px; font-weight: 650; color: var(--ink); letter-spacing: -.015em; }
 body[data-surface="page"] .card-email { margin-top: 1px; font-size: 12px; font-weight: 450; color: var(--ink-2); }
 body[data-surface="page"] .card-code { font-size: 25px; padding: 4px 0 0; margin-top: 0; letter-spacing: .075em; }
-body[data-surface="page"] .card-top .ring { --ring-size: 31px; margin-left: auto; }
-body[data-surface="page"] .card-top .ring-num { font-size: 10px; }
+body[data-surface="page"] .card-top .ring { --ring-size: 36px; margin-left: auto; }
+body[data-surface="page"] .card-top .ring-num { font-size: 14px; }
 body[data-surface="page"] .card .card-tools {
   position: static; align-self: stretch; justify-content: flex-end; margin-top: auto;
   padding-top: 10px; border-top: 1px solid var(--line-soft); gap: 6px;
@@ -94,7 +93,7 @@ body[data-surface="page"] .card .mini:hover { background: var(--brand-soft); col
 .row:focus-within .row-more { opacity: 1; }
 .mini { color: var(--ink-2); opacity: .9; transition: transform 180ms var(--e-spring), color 180ms, background 180ms; }
 .mini:hover { transform: translateY(-2px); }
-.mini:active { transform: scale(.9); }
+.mini:active { transform: none; }
 .sw-thumb { transition-duration: 460ms; }
 body[data-surface="page"] .sidebar { background: linear-gradient(150deg,var(--surface),color-mix(in srgb,var(--surface) 65%,var(--bg))); }
 body[data-surface="page"] .sidebar .brand { padding-top: 10px; padding-bottom: 24px; }

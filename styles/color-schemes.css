@@ -159,6 +159,12 @@ body[data-surface="page"] .lock { background: transparent; }
 .settings-pane .btn, .settings-pane .seg-btn { font-weight: 400; }
 .settings-pane .seg-btn.is-on { font-weight: 500; }
 .settings-pane .set-row { gap: 9px; padding: 12px; }
+.settings-pane .set-row { display: grid; grid-template-columns: 29px minmax(0, 1fr) auto; }
+.settings-pane .set-label { min-width: 0; overflow-wrap: anywhere; }
+.settings-pane .set-row:has(.seg) { grid-template-columns: 29px minmax(0, 1fr); }
+.settings-pane .set-row:has(.seg) .set-ctl { grid-column: 2; min-width: 0; width: 100%; }
+.settings-pane .set-ctl .seg { display: flex; min-width: 0; width: 100%; max-width: 100%; }
+.settings-pane .set-ctl .seg-btn { flex: 1 1 auto; min-width: 0; }
 .settings-pane .set-ico { color: var(--ink-2); }
 .settings-pane .field-hint { padding: 0 12px 10px; }
 .settings-pane .note { font-size: 11px; font-weight: 400; }
@@ -190,6 +196,4 @@ body[data-surface="page"] .lock { background: transparent; }
 [data-color-choice="mono"] { --swatch-a:#29292c; --swatch-b:#939398; --swatch-c:#f3f3f4; }
 @media (max-width:430px) {
   .color-choices { gap: 5px; }
-  .settings-pane .set-row { flex-wrap: wrap; }
-  .settings-pane .set-label { min-width: 120px; }
 }

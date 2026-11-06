@@ -197,12 +197,12 @@ async function main() {
   await sleep(500);
   assert("抽屉打开", (await evaluate(cdp, "document.querySelector('.sheet').classList.contains('is-open')")) === true);
 
-  // 空表单提交 → 三个必填项报错
+  // 空表单提交 → 仅 OTP 密钥必填
   await evaluate(cdp, "document.querySelector('.sheet-foot .btn-primary').click()");
   await sleep(300);
   assert(
     "空表单标出必填错误",
-    (await evaluate(cdp, "document.querySelectorAll('.sheet .field.is-bad').length")) === 3,
+    (await evaluate(cdp, "document.querySelectorAll('.sheet .field.is-bad').length")) === 1,
     String(await evaluate(cdp, "document.querySelectorAll('.sheet .field.is-bad').length"))
   );
 
@@ -708,7 +708,7 @@ async function main() {
     }
     await sleep(50);
   }
-  assert("锁定时有面板缩小的过程", sawCollapse === true);
+  assert("锁定时面板收回为登录卡", sawCollapse === true);
   await sleep(900);
   assert("锁定后出现登录卡", (await evaluate(cdp, "!!document.querySelector('.lock-card')")) === true);
   assert(
@@ -728,18 +728,18 @@ async function main() {
     const st = JSON.parse(
       await evaluate(
         cdp,
-        "JSON.stringify({ panel: !!document.querySelector('.flip-panel'), part: (document.querySelector('#app') || { getAnimations: () => [] }).getAnimations().length })"
+        "JSON.stringify({ panel: !!document.querySelector('.flip-panel'), part: !!document.querySelector('.flip-panel') && document.querySelector('#screen').inert && getComputedStyle(document.querySelector('#app')).transform === 'none' && Number(getComputedStyle(document.querySelector('#app')).opacity)>0 && Number(getComputedStyle(document.querySelector('#app')).opacity)<1 && document.querySelector('#app').getAnimations().some(a=>a.effect.getKeyframes().some(f=>f.clipPath)) })"
       )
     );
     if (st.panel) sawPanel = true;
-    if (st.part > 0) sawPart = true;
+    if (st.part) sawPart = true;
     if (sawPanel && sawPart) break;
     await sleep(50);
   }
-  assert("解锁时面板在放大", sawPanel === true);
-  assert("解锁时页面内容连续显现", sawPart === true);
+  assert("解锁时登录卡展开为面板", sawPanel === true);
+  assert("内容保持原始尺寸，并随形变逐渐显示", sawPart === true);
   for (let i = 0; i < 100; i++) {
-    if ((await evaluate(cdp, "getComputedStyle(document.querySelector('.sidebar')).opacity")) === "1") break;
+    if (await evaluate(cdp, "!document.body.dataset.gateMotion && !document.querySelector('#screen').inert")) break;
     await sleep(40);
   }
   assert("入场结束后骨架完全可见", (await evaluate(cdp, "getComputedStyle(document.querySelector('.sidebar')).opacity")) === "1");

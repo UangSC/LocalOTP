@@ -68,7 +68,7 @@
       subtitle: subtitleFor(current),
       body: container,
       footer: first.footer || null,
-      onClose: () => Object.values(panes).forEach((pane) => pane?.dispose?.()),
+      onClose: () => { tabs.destroy(); Object.values(panes).forEach((pane) => pane?.dispose?.()); },
     });
   }
 

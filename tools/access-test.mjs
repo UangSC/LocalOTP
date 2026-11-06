@@ -13,7 +13,7 @@ function fixture(minutes = 0) {
   return { local, request: (message, caller = 'page-1') => service.request(message, caller), at: value => { time = value; },
     restartWorker: () => { service = build(); }, restartBrowser: () => { session = undefined; service = build(); }, session: () => session };
 }
-await test('默认关闭：正确解锁只授权当前文档，重开仍要密码', async () => {
+await test('选择每次验证：正确解锁只授权当前文档，重开仍要密码', async () => {
   const f = fixture(); const auth = await f.request({ action: 'unlock', password: 'valid' });
   assert.ok(auth.ok); assert.equal(auth.expires, 0); assert.equal((await f.request({ action: 'restore' }, 'page-2')).ok, false);
 });
@@ -140,4 +140,39 @@ await test('来源检查拒绝网页、其他扩展、工具页面、伪造页�
   for(const sender of [{id:'other',url:`chrome-extension://${id}/popup.html`},{id,url:'https://example.com/popup.html'},{id,url:`chrome-extension://${id}/api.html`}]) assert.equal(context.OTP.accessCaller({clientId},sender,id),null);
   for(const value of [undefined,'__proto__','',123])assert.equal(context.OTP.accessCaller({clientId:value},{id,url:`chrome-extension://${id}/popup.html`},id),null);
   assert.equal(context.OTP.accessCaller({clientId},{id,url:`chrome-extension://${id}/popup.html`,documentId:'real-document'},id),'document:real-document');
+});
+
+await test('敏感操作：一小时精确到期，恢复页面不会刷新真实验证时间', async () => {
+  const f = fixture(15), auth = await f.request({ action: 'unlock', password: 'valid' });
+  f.at(4599999); assert.ok((await f.request({ action: 'sensitive-check', proof: auth.proof })).ok);
+  f.at(4600000); assert.equal((await f.request({ action: 'sensitive-check', proof: auth.proof })).ok, false);
+  assert.equal((await f.request({ action: 'sensitive-verify', proof: auth.proof, password: 'wrong' })).ok, false);
+  assert.equal(f.session().verifiedAt, 1000000);
+  assert.ok((await f.request({ action: 'sensitive-verify', proof: auth.proof, password: 'valid' })).ok);
+  assert.equal(f.session().verifiedAt, 4600000);
+});
+await test('永久免密不代替密码验证；浏览器重启后敏感操作仍须验证', async () => {
+  const f = fixture(15); f.local.settings.passwordRequired = false;
+  const direct = await f.request({ action: 'restore' });
+  assert.ok(direct.ok);
+  assert.equal((await f.request({ action: 'sensitive-check', proof: direct.proof })).ok, false);
+  assert.ok((await f.request({ action: 'sensitive-verify', proof: direct.proof, password: 'valid' })).ok);
+  f.at(4600000); const later = await f.request({ action: 'restore' }, 'page-2');
+  assert.equal((await f.request({ action: 'sensitive-check', proof: later.proof }, 'page-2')).ok, false);
+  f.restartBrowser(); const restarted = await f.request({ action: 'restore' });
+  assert.ok(restarted.ok);
+  assert.equal((await f.request({ action: 'sensitive-check', proof: restarted.proof })).ok, false);
+});
+await test('关闭永久免密撤销旧授权，其他页面可以共享一次真实密码验证', async () => {
+  const f = fixture(15), auth = await f.request({ action: 'unlock', password: 'valid' });
+  const second = await f.request({ action: 'restore' }, 'page-2');
+  assert.ok((await f.request({ action: 'sensitive-check', proof: second.proof }, 'page-2')).ok);
+  f.local.settings.passwordRequired = false;
+  const permanent = await f.request({ action: 'restore' });
+  assert.ok((await f.request({ action: 'sensitive-check', proof: permanent.proof })).ok);
+  f.local.settings.passwordRequired = true;
+  assert.equal((await f.request({ action: 'restore' })).ok, false);
+  for (const action of ['sensitive-check', 'sensitive-verify']) {
+    assert.equal((await f.request({ action, proof: auth.proof, password: 'valid' })).ok, false);
+  }
 });

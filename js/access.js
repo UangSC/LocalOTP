@@ -4,7 +4,7 @@
   const OTP = global.OTP;
   const available = !!global.chrome?.runtime?.id && !!global.chrome?.storage?.session;
   const clientId = available ? global.crypto.randomUUID() : "";
-  let proof = "", expires = 0, issuedAt = 0, acceptedEpoch = "";
+  let proof = "", expires = 0, issuedAt = 0, acceptedEpoch = "", localVerifiedAt = 0;
   const revoked = new Set();
   async function request(action, extra = {}) {
     if (!available) return { ok: false };
@@ -26,14 +26,29 @@
   });
   OTP.access = {
     available,
-    async unlock(password) { return available ? accept(await request("unlock", { password })) : OTP.store.verifyPassword(password); },
-    async restore(ticket) { try { return available && accept(await request("restore", { ticket })); } catch (_) { return false; } },
+    async unlock(password) {
+      if (available) return accept(await request("unlock", { password }));
+      const ok = await OTP.store.verifyPassword(password);
+      if (ok) localVerifiedAt = Date.now();
+      return ok;
+    },
+    async sensitive(password) {
+      if (available) return request(password === undefined ? "sensitive-check" : "sensitive-verify", { password });
+      if (password !== undefined) {
+        if (!await OTP.store.verifyPassword(password)) return { ok: false };
+        localVerifiedAt = Date.now();
+      }
+      const ok = localVerifiedAt > 0 && Date.now() >= localVerifiedAt && Date.now() < localVerifiedAt + 3600000;
+      return { ok, verifiedUntil: ok ? localVerifiedAt + 3600000 : 0 };
+    },
+    async restore(ticket) { try { return available ? accept(await request("restore", { ticket })) : OTP.store.hasPassword() && OTP.store.settings().passwordRequired === false; } catch (_) { return false; } },
+    async scan(action, extra = {}) { return request(action, extra); },
     async remember() { return accept(await request("remember")); },
     async ticket() { const result = await request("ticket"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result.ticket; },
     async float() { const result = await request("float"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result; },
     async openPage() { const result = await request("page"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result; },
     async revoke() {
-      proof = ""; expires = 0;
+      proof = ""; expires = 0; localVerifiedAt = 0;
       if (!available) return;
       try { if (!(await request("revoke")).ok) throw new Error("会话清理失败"); }
       catch (error) {
@@ -45,6 +60,6 @@
     },
     onRevoked(callback) { revoked.add(callback); },
     get expires() { return expires; },
-    get graceActive() { return !!OTP.store.settings().rememberMinutes && Date.now() >= issuedAt && expires > Date.now(); },
+    get graceActive() { return OTP.store.settings().passwordRequired === false || !!OTP.store.settings().rememberMinutes && Date.now() >= issuedAt && expires > Date.now(); },
   };
 })(globalThis);

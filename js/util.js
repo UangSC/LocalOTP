@@ -87,6 +87,8 @@
   /* ── 图标（24×24 网格，统一线宽）────────────────────────────────────── */
 
   const ICONS = {
+    scan: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M3 12h18"/><path d="M7 7h3v3H7zm7 7h3v3h-3z"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/>',
     search: '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.4 15.4 4.3 4.3"/>',
     x: '<path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/>',
     plus: '<path d="M12 5.4v13.2M5.4 12h13.2"/>',
@@ -200,7 +202,7 @@
 
   /* ── 剪贴板 ───────────────────────────────────────────────────────────── */
 
-  async function copyText(text) {
+  async function copyText(text, container) {
     const value = String(text == null ? "" : text);
     try {
       if (navigator.clipboard && global.isSecureContext !== false) {
@@ -210,19 +212,23 @@
     } catch (err) {
       /* 落到下面的兜底 */
     }
+    let ta;
     try {
-      const ta = document.createElement("textarea");
+      ta = document.createElement("textarea");
       ta.value = value;
       ta.setAttribute("readonly", "");
       ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
-      document.body.append(ta);
+      // 网页扫码结果位于模态对话框内，后备复制控件也必须放在可交互的模态区域。
+      (container || document.body).append(ta);
+      ta.focus({ preventScroll: true });
       ta.select();
       ta.setSelectionRange(0, value.length);
       const ok = document.execCommand("copy");
-      ta.remove();
       return ok;
     } catch (err) {
       return false;
+    } finally {
+      ta?.remove();
     }
   }
 

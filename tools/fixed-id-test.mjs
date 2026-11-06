@@ -20,7 +20,7 @@ async function verify(label, port) {
   const directory = join(profile, 'extension-' + label); mkdirSync(directory);
   writeFileSync(join(directory, 'manifest.json'), JSON.stringify({ manifest_version: 3, name: 'LocalOTP ID verification', version: '1.0.0', key: manifest.key, background: { service_worker: 'probe.js' } }));
   writeFileSync(join(directory, 'probe.js'), 'globalThis.ready=true;');
-  const child = spawn(findBrowser(), ['--headless=new', '--no-first-run', '--disable-sync', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${directory}`, 'about:blank'], { stdio: 'ignore', windowsHide: true });
+  const child = spawn(findBrowser(), ['--headless=new', '--edge-skip-compat-layer-relaunch', '--no-first-run', '--disable-sync', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${directory}`, 'about:blank'], { stdio: 'ignore', windowsHide: true });
   cleanProfileOnExit(child, profile);
   try {
     for (let i = 0; i < 100; i++) {
@@ -35,6 +35,6 @@ async function verify(label, port) {
     throw new Error('测试扩展加载超时');
   } finally { child.kill(); }
 }
-const results = await Promise.all([verify('A', 9411), verify('B', 9412)]);
+const results = await Promise.all([verify('A', 15000+Math.floor(Math.random()*10000)), verify('B', 25000+Math.floor(Math.random()*10000))]);
 console.log('公钥格式、固定 ID 及两个不同目录的真实 Edge 加载均通过。');
 console.log(JSON.stringify(results));

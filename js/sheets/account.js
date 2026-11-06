@@ -4,7 +4,9 @@
   const OTP = global.OTP, store = OTP.store, ui = OTP.ui;
   const { el, icon } = OTP;
   const { field, advRow, randomPassword, group, changed } = OTP.sheetUI;
-  function openEditor(account) {
+  async function openEditor(account) {
+    if (account?.password && !await OTP.sensitive.ensure("查看或编辑账号密码")) return;
+    if (document.querySelector("#screen")?.inert) return;
     const isEdit = !!account;
     const adv = {
       algorithm: account ? account.algorithm : "SHA1",
@@ -22,7 +24,7 @@
       autocomplete: "off",
       spellcheck: false,
     });
-    const emailField = field("邮箱", emailInput, { required: true, error: "请输入有效的邮箱地址" });
+    const emailField = field("邮箱或账号名", emailInput, { optional: true });
 
     const passInput = el("input", {
       id: "f-pass",
@@ -38,7 +40,8 @@
       "aria-label": "显示密码",
       "data-tip": "显示 / 隐藏",
       html: icon("eye", 15, "i-sm"),
-      onclick: () => {
+      onclick: async () => {
+        if (account?.password && !await restorePassword()) return;
         const show = passInput.type === "password";
         passInput.type = show ? "text" : "password";
         eyeBtn.innerHTML = icon(show ? "eye-off" : "eye", 15, "i-sm");
@@ -60,8 +63,7 @@
       },
     });
     const passField = field("默认密码", passInput, {
-      required: true,
-      error: "密码不能为空",
+      optional: true,
       extra: [diceBtn, eyeBtn],
     });
 
@@ -281,30 +283,30 @@
       onclick: submit,
     });
 
-    function submit() {
+    async function submit() {
+      if (account?.password && !await restorePassword()) return;
       const email = emailInput.value.trim();
       const password = passInput.value;
       const secretRaw = secretInput.value;
       const check = OTP.totp.validateSecret(secretRaw);
 
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+      const emailOk = !email.includes("@") || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
       // 同一邮箱不能重复（编辑自己除外）
       const duplicate = store
         .accounts()
         .find(
           (item) =>
-            item.email.trim().toLowerCase() === email.toLowerCase() &&
+            email && item.email.trim().toLowerCase() === email.toLowerCase() &&
             (!account || item.id !== account.id)
         );
 
       emailField.setError(
         !emailOk ? "请输入有效的邮箱地址" : duplicate ? "这个邮箱已经存在" : ""
       );
-      passField.setError(password.length ? "" : "密码不能为空");
       secretField.setError(check.ok ? "" : check.error);
 
-      if (!emailOk || duplicate || !password.length || !check.ok) {
+      if (!emailOk || duplicate || !check.ok) {
         const firstBad = body.querySelector(".field.is-bad");
         if (firstBad) firstBad.scrollIntoView({ behavior: "smooth", block: "center" });
         OTP.flash(body.querySelector(".field.is-bad .field-input"), "is-bad", 400);
@@ -343,14 +345,36 @@
 
     ui.openSheet({
       title: isEdit ? "编辑账号" : "新增账号",
-      subtitle: isEdit ? account.email : "邮箱、默认密码与 TOTP 密钥都保存在本机",
+      subtitle: isEdit ? account.email || account.issuer || "未命名 OTP" : "只需 OTP 密钥，邮箱、密码与服务名称均可选",
       body,
       footer: [cancel, save],
       onClose: () => {
+        algoSeg.destroy(); digitsSeg.destroy(); periodSeg.destroy();
         clearInterval(liveTick);
         clearTimeout(liveTimer);
+        clearInterval(passwordTimer);
+        hiddenPassword = ""; passInput.value = "";
         liveRing.destroy();
       },
+    });
+
+    let hiddenPassword = null;
+    async function restorePassword() {
+      if (!await OTP.sensitive.ensure("查看或编辑账号密码") || !body.isConnected || document.querySelector("#screen")?.inert) return false;
+      if (hiddenPassword !== null) { passInput.value = hiddenPassword; hiddenPassword = null; }
+      passInput.disabled = false; passInput.placeholder = "可选";
+      return true;
+    }
+    const passwordTimer = setInterval(() => {
+      if (!account?.password || hiddenPassword !== null) return;
+      if (Date.now() < OTP.sensitive.verifiedUntil) return;
+      hiddenPassword = passInput.value; passInput.value = ""; passInput.type = "password"; passInput.disabled = true;
+      passInput.placeholder = "验证已过期，点击眼睛重新验证";
+    }, 500);
+    for (const type of ["copy", "cut"]) passInput.addEventListener(type, async event => {
+      if (!account?.password) return;
+      event.preventDefault();
+      if (await restorePassword()) await OTP.copyText(passInput.value);
     });
 
     if (secretInput.value) refreshLive();

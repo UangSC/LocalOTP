@@ -5,7 +5,7 @@ import { cpSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOnExit } from './cdp.mjs';
-const profile = createBrowserProfile('real-popup-'), extension = join(profile, 'extension'), port = 9402;
+const profile = createBrowserProfile('real-popup-'), extension = join(profile, 'extension'), port = 15000+Math.floor(Math.random()*20000);
 const denyUnlock = process.argv.includes('--deny-unlock');
 const openPage = process.argv.includes('--open-page');
 mkdirSync(extension);
@@ -55,7 +55,7 @@ chrome.runtime.onMessage.addListener((m,s)=>{
  if(m.type==='test:blocked')popupContextReport.blocked=m.inert;
 });`;
 writeFileSync(join(extension,'js/background.js'),readFileSync(join(extension,'js/background.js'),'utf8')+observer);
-const child=spawn(findBrowser(),['--headless=new','--no-first-run','--disable-sync',`--user-data-dir=${profile}`,`--remote-debugging-port=${port}`,`--load-extension=${extension}`,'about:blank'],{stdio:'ignore',windowsHide:true});
+const child=spawn(findBrowser(),['--headless=new', '--edge-skip-compat-layer-relaunch','--no-first-run','--disable-sync',`--user-data-dir=${profile}`,`--remote-debugging-port=${port}`,`--load-extension=${extension}`,'about:blank'],{stdio:'ignore',windowsHide:true});
 cleanProfileOnExit(child,profile);
 let worker;
 try {

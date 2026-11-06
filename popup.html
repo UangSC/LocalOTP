@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="styles/studio.css" />
     <link rel="stylesheet" href="styles/otp-tools.css" />
     <link rel="stylesheet" href="styles/window-tools.css" />
+    <link rel="stylesheet" href="styles/scan.css" />
     <script src="js/theme-boot.js"></script>
     <script src="js/window-boot.js"></script>
   </head>
@@ -49,7 +50,8 @@
               </div>
 
               <div class="top-actions">
-                <button class="ibtn" id="pin-window-btn" type="button" aria-label="固定为独立小窗"></button>
+                <button class="ibtn" id="scan-btn" type="button" data-tip="扫码与导入 OTP" aria-label="扫码与导入 OTP"><svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M3 12h18"/><path d="M7 7h3v3H7zm7 7h3v3h-3z"/></svg></button>
+              <button class="ibtn" id="pin-window-btn" type="button" aria-label="固定为独立小窗"></button>
                 <button class="ibtn" id="add-btn" type="button" data-tip="新增账号 · N" aria-label="新增账号">
                   <svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M12 5.4v13.2M5.4 12h13.2" />
@@ -194,6 +196,7 @@
     <script src="js/list/items.js"></script>
     <script src="js/list/ticker.js"></script>
     <script src="js/list.js"></script>
+    <script src="js/sensitive.js"></script>
     <script src="js/sheets/common.js"></script>
     <script src="js/sheets/account.js"></script>
     <script src="js/sheets/quick-add.js"></script>
@@ -204,6 +207,11 @@
     <script src="js/sheets/password.js"></script>
     <script src="js/sheets/categories.js"></script>
     <script src="js/sheets.js"></script>
+    <script src="js/vendor/jsQR.js"></script>
+    <script src="js/qr.js"></script>
+    <script src="js/qr-crop.js"></script>
+    <script src="js/scan-picker.js"></script>
+    <script src="js/scan.js"></script>
     <script src="js/gate-motion.js"></script>
     <script src="js/app/views.js"></script>
     <script src="js/app/theme.js"></script>

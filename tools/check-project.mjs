@@ -39,6 +39,7 @@ for (const name of ["index.html", "popup.html", "api.html"]) {
   }
 }
 for (const name of walk(resolve(root, "js"))) {
+  if (!name.endsWith(".js")) continue;
   const result = spawnSync(process.execPath, ["--check", name], { encoding: "utf8", windowsHide: true });
   assert.equal(result.status, 0, relative(root, name) + " 语法错误：" + result.stderr);
 }

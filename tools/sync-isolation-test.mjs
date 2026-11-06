@@ -10,7 +10,7 @@ const check = (name, value) => { assert.ok(value, name); count++; console.log("â
 const sessions = [];
 async function launch(port) {
   const profile = createBrowserProfile("sync-isolation-");
-  const child = spawn(findBrowser(), ["--headless=new", "--disable-sync", "--no-first-run", "--no-default-browser-check",
+  const child = spawn(findBrowser(), ["--headless=new", "--edge-skip-compat-layer-relaunch", "--disable-sync", "--no-first-run", "--no-default-browser-check",
     `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${process.cwd()}`, "about:blank"],
   { stdio: "ignore", windowsHide: true });
   cleanProfileOnExit(child, profile);
@@ -36,7 +36,7 @@ async function launch(port) {
 }
 
 try {
-  const launched = await Promise.allSettled([launch(9446), launch(9447)]);
+  const launched = await Promise.allSettled([launch(15000+Math.floor(Math.random()*10000)), launch(25000+Math.floor(Math.random()*10000))]);
   for (const result of launched) if (result.status === "rejected") throw result.reason;
   const [a, b] = launched.map(result => result.value);
   const idA = await evaluate(a.worker, "chrome.runtime.id");

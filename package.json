@@ -1,6 +1,6 @@
 {
   "name": "localotp",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "private": true,
   "description": "本地 TOTP 账号管理扩展；存储风险见 README",
   "engines": { "node": ">=22" },

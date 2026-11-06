@@ -23,7 +23,11 @@
       const local = await readLocal();
       const version = versionOf(local.security), minutes = minutesOf(local.settings), time = now();
       let state = await readSession();
-      if (!state || state.version !== version) state = { version, epoch: random(), proofs: {}, tickets: {}, lease: null };
+      const disabled = local.settings?.passwordRequired === false;
+      if (!state || state.version !== version || !!state.disabled !== disabled) state = {
+        version, disabled, verifiedAt: state?.version === version ? state.verifiedAt || 0 : 0,
+        epoch: random(), proofs: {}, tickets: {}, lease: null,
+      };
       state.proofs ||= {}; state.tickets ||= {};
       // 清理旧页面凭证；重复打开不延长免密到期时间。
       for (const [key, proof] of Object.entries(state.proofs)) if (time < proof.at || time - proof.at > 86400000) delete state.proofs[key];
@@ -38,6 +42,7 @@
       const authorized = () => version && typeof message.proof === "string" && message.proof.length > 0 && Object.hasOwn(state.proofs, caller) && state.proofs[caller].token === message.proof;
       let result = { ok: false };
       switch (message.action) {
+        case "check": result = authorized() ? { ok:true, epoch:state.epoch } : { ok:false,code:"AUTH_REQUIRED",error:"当前页面授权已失效，请重新解锁" }; break;
         case "unlock": {
           if (!version || typeof message.password !== "string") break;
           if (!await verify(message.password, local.security)) break;
@@ -45,6 +50,7 @@
           const current = await readLocal();
           if (versionOf(current.security) !== version) break;
           const liveMinutes = minutesOf(current.settings);
+          state.verifiedAt = time;
           state.lease = liveMinutes ? { at: time, expires: time + liveMinutes * 60000, minutes: liveMinutes } : null;
           result = issue(); break;
         }
@@ -52,7 +58,7 @@
           if (!version) break;
           if (typeof message.ticket === "string" && Object.hasOwn(state.tickets, message.ticket)) {
             const ticket = state.tickets[message.ticket]; delete state.tickets[message.ticket]; result = issue(ticket.verifiedAt);
-          } else if (!message.ticket && state.lease) result = issue(state.lease.at);
+          } else if (!message.ticket && (disabled || state.lease)) result = issue(state.lease?.at || time);
           break;
         }
         case "remember": {
@@ -61,6 +67,24 @@
           state.lease = minutes && time < at + minutes * 60000 ? { at, expires: at + minutes * 60000, minutes } : null;
           result = { ok: true, expires: state.lease?.expires || 0, at: state.lease?.at || 0 }; break;
         }
+        case "sensitive-check":
+        case "sensitive-verify": {
+          if (!authorized()) { result = { ok: false, code: "AUTH_REQUIRED" }; break; }
+          if (message.action === "sensitive-verify") {
+            if (time < (state.retryAfter || 0)) { result = { ok: false, error: "尝试次数过多，请稍后再试" }; break; }
+            if (typeof message.password !== "string" || !await verify(message.password, local.security)) {
+              state.failures = (state.failures || 0) + 1;
+              if (state.failures >= 5) { state.retryAfter = time + 20000; state.failures = 0; }
+              result = { ok: false, code: "WRONG_PASSWORD" }; break;
+            }
+            if (versionOf((await readLocal()).security) !== version) break;
+            state.verifiedAt = now(); state.failures = 0; state.retryAfter = 0;
+          }
+          const checkedAt = now();
+          const fresh = state.verifiedAt > 0 && checkedAt >= state.verifiedAt && checkedAt < state.verifiedAt + 3600000;
+          result = { ok: fresh, code: fresh ? undefined : "REVERIFY_REQUIRED", verifiedUntil: fresh ? state.verifiedAt + 3600000 : 0 };
+          break;
+        }
         case "ticket": {
           if (!authorized()) { result = { ok: false, code: "AUTH_REQUIRED", error: "当前页面授权已失效，请锁定后重新解锁" }; break; }
           const ticket = random();
@@ -68,7 +92,7 @@
           result = { ok: true, ticket }; break;
         }
         case "revoke":
-          state = { version, epoch: random(), proofs: {}, tickets: {}, lease: null }; result = { ok: true }; break;
+          state = { version, disabled, epoch: random(), proofs: {}, tickets: {}, lease: null }; result = { ok: true }; break;
         case "refresh": result = { ok: true }; break;
       }
       await writeSession(state);

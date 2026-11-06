@@ -17,6 +17,13 @@ const suites = [
   ["tools/window-browser-test.mjs"],
   ["tools/otp-browser-test.mjs"],
   ["tools/qa.mjs"],
+  ["tools/scan-access-browser-test.mjs"],
+  ["tools/scan-capture-browser-test.mjs"],
+  ["tools/ui-polish-test.mjs"],
+  ["tools/popup-layout-test.mjs"],
+  ["tools/popup-sizing-test.mjs"],
+  ["tools/popup-native-size-test.mjs"],
+  ["tools/management-interaction-test.mjs"],
 ];
 for (const args of suites) {
   console.log("运行：node " + args.join(" "));

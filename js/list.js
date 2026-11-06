@@ -155,7 +155,7 @@
         const issuerRanges = hit ? hit.ranges.issuer : [];
         const codeRanges = hit ? hit.ranges.code : [];
 
-        ref.emailNode.replaceChildren(highlight(ref.acc.email, emailRanges));
+        ref.emailNode.replaceChildren(highlight(ref.acc.email || ref.acc.issuer || "未命名 OTP", ref.acc.email ? emailRanges : issuerRanges));
         ref.issuerNode.replaceChildren(highlight(issuerText(ref.acc), issuerRanges));
         ref.codeNode.replaceChildren(
           codeRanges.length
@@ -207,7 +207,7 @@
       ref.node.classList.remove("is-match", "is-dim", "is-code-hit");
       if (ref.hlSig) {
         ref.hlSig = "";
-        ref.emailNode.replaceChildren(document.createTextNode(ref.acc.email));
+        ref.emailNode.replaceChildren(document.createTextNode(ref.acc.email || ref.acc.issuer || "未命名 OTP"));
         ref.issuerNode.replaceChildren(document.createTextNode(issuerText(ref.acc)));
         ref.codeNode.replaceChildren(document.createTextNode(OTP.fmt.group(ref.code)));
       }

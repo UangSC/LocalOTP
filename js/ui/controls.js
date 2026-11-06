@@ -225,11 +225,17 @@
         node.append(btn);
       }
 
-      function place() {
+      function place(instant = false) {
         const btn = buttons.find((b) => b.dataset.id === active);
         if (!btn || !btn.offsetWidth) return;
+        if (instant) pill.style.transition = "none";
         pill.style.width = btn.offsetWidth + "px";
         pill.style.transform = `translateX(${btn.offsetLeft - 3}px)`;
+        if (instant) {
+          // 布局变化立即对齐，避免旧位置在缩窄后的卡片外继续播放动画。
+          void pill.offsetWidth;
+          pill.style.removeProperty("transition");
+        }
       }
 
       function setActive(id) {
@@ -243,8 +249,11 @@
       }
 
       setActive(active);
-      requestAnimationFrame(place);
-      return { node, setActive, get value() { return active; } };
+      const observer = new ResizeObserver(() => place(true));
+      observer.observe(node);
+      buttons.forEach(button => observer.observe(button));
+      const frame = requestAnimationFrame(() => place(true));
+      return { node, setActive, destroy() { observer.disconnect(); cancelAnimationFrame(frame); }, get value() { return active; } };
     }
 
     /* ── Escape / 浮层状态 ────────────────────────────────────────────────── */

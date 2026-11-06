@@ -226,6 +226,7 @@
       el(
         "div",
         { class: "card-box" },
+        el("button", { class: "btn btn-ghost", type: "button", text: "扫码 / 图片 / OTP 链接", onclick: () => OTP.scan.open() }),
         el(
           "div",
           { class: "card-head" },
@@ -260,7 +261,7 @@
 
     parse();
 
-    return { body, footer };
+    return { body, footer, dispose: () => dupSeg.destroy() };
   }
 
 

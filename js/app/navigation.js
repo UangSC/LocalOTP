@@ -30,7 +30,8 @@
 
     /* 备份 */
 
-    function exportBackup() {
+    async function exportBackup() {
+      if (!await OTP.sensitive.ensure("导出包含密码的备份") || runtime.lockNode || runtime.transitioning) return;
       const payload = store.exportPayload();
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);

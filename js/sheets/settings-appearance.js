@@ -102,6 +102,6 @@
     body.append(group("外观", appearanceRows));
 
 
-    return {body, refresh() { updateColors(); themeSeg.setActive(store.settings().theme); }};
+    return {body, refresh() { updateColors(); themeSeg.setActive(store.settings().theme); }, dispose() { themeSeg.destroy(); viewSeg.destroy(); }};
   };
 })(globalThis);

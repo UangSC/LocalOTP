@@ -8,7 +8,7 @@
 .otp-input-wrap { display: flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 11px; background: var(--search-bg); height: 38px; padding: 0 5px 0 11px; gap: 3px; }
 .otp-input-wrap:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-halo); background: var(--surface); }
 .otp-input-wrap input { min-width: 0; width: 100%; flex: 1; height: 100%; padding: 0; font: 11px var(--font-mono); }
-.otp-input-wrap input::placeholder { font: 11px var(--font-ui); color: var(--ink-3); }
+.otp-input-wrap input::placeholder { font: 11px var(--font-ui); color: var(--ink-2); }
 .otp-input-wrap .ibtn { width: 27px; height: 28px; flex: none; border-radius: 8px; }
 .otp-result { display: flex; align-items: center; gap: 11px; min-height: 66px; }
 .otp-code-group { min-width: 0; flex: 1; display: grid; gap: 4px; }

@@ -87,8 +87,10 @@
     colorScheme: "blue",
     view: "list",
     sort: "recent",
-    lockAfter: 5,
-    rememberMinutes: 0,
+    lockAfter: 15,
+    rememberMinutes: 15,
+    passwordRequired: true,
+    accessPolicyVersion: 1,
     syncEnabled: false,
     lastSyncAt: 0,
     lastBackupAt: 0,
@@ -246,6 +248,12 @@
     }
 
     state.security = sec && sec.hash ? sec : null;
+    // 将旧版的默认关闭升级为 15 分钟；之后显式选择关闭仍会保留。
+    if (data && !data.settings?.accessPolicyVersion) {
+      dirtySettings = { accessPolicyVersion: 1, rememberMinutes: state.settings.rememberMinutes || 15 };
+      Object.assign(state.settings, dirtySettings);
+      await persist();
+    }
     state.ready = true;
     mirrorTheme(state.settings.theme);
     bindStorage();

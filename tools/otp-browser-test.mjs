@@ -8,8 +8,8 @@ import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOn
 
 const output = resolve('artifacts/studio-1.5'); mkdirSync(output, { recursive: true });
 const profile = createBrowserProfile('otp-');
-const port = 9386;
-const child = spawn(findBrowser(), ['--headless=new', '--no-first-run', '--no-default-browser-check',
+const port = 15000+Math.floor(Math.random()*20000);
+const child = spawn(findBrowser(), ['--headless=new', '--edge-skip-compat-layer-relaunch', '--no-first-run', '--no-default-browser-check',
   `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${process.cwd()}`, 'about:blank'], { stdio: 'ignore', windowsHide: true });
 cleanProfileOnExit(child, profile);
 const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
@@ -77,7 +77,7 @@ try {
   for (let i = 0; i < 100; i++) { if (await evaluate(worker, '!!globalThis.OTP?.store?.state.ready')) break; await sleep(50); }
   check('MV3 后台完成初始化', await evaluate(worker, '!!globalThis.OTP?.store?.state.ready'));
   check('真实 manifest 注册 otp 关键字', await evaluate(worker, 'chrome.runtime.getManifest().omnibox.keyword === "otp"'));
-  check('未扩大站点与浏览记录权限', await evaluate(worker, 'JSON.stringify(chrome.runtime.getManifest().permissions) === JSON.stringify(["storage","clipboardWrite","alarms"]) && !chrome.runtime.getManifest().host_permissions'));
+  check('仅新增主动扫码所需 activeTab，无常驻站点与浏览记录权限', await evaluate(worker, 'JSON.stringify(chrome.runtime.getManifest().permissions) === JSON.stringify(["storage","clipboardWrite","alarms","activeTab","scripting"]) && !chrome.runtime.getManifest().host_permissions'));
   const before = await evaluate(worker, '(async()=>JSON.stringify({local:await chrome.storage.local.get(null),sync:await chrome.storage.sync.get(null)}))()');
   await setViewport(cdp, 1280, 900, 1);
   await goto('/api.html#otp=' + secret); await wait('document.querySelector("#api-generator").dataset.otpStatus === "ready"');
@@ -151,6 +151,8 @@ try {
   check('402×600 弹窗保留至少 190px 账号滚动区', size.viewportHeight >= 190 && size.dockBottom <= 600 && size.scrollWidth <= 402);
   check('账号行不被 flex 压扁，复制操作完整留在卡片内', await evaluate(cdp, `[...document.querySelectorAll('.quick')].every(n=>{const r=n.getBoundingClientRect(),a=n.querySelector('.q-acts').getBoundingClientRect();return r.height>=75&&a.bottom<=r.bottom&&a.top>=r.top})`));
   await click('.quick:last-child .qact-code');
+  // 浏览器剪贴板是异步操作，不能假定固定 120ms 内已经返回成功。
+  await wait('document.querySelector(".quick:last-child .qact-code").classList.contains("is-done")');
   check('滚动到底部仍能复制最后一条账号', await evaluate(cdp, 'document.querySelector(".quick:last-child .qact-code").classList.contains("is-done")'));
   await evaluate(cdp, 'OTP.ui.closeAll();document.querySelector("#list").scrollTo({top:0,behavior:"instant"})');
   await wait('document.querySelector("#list").scrollTop===0');
@@ -165,7 +167,7 @@ try {
   await evaluate(cdp, 'OTP.store.patchSettings({theme:"dark",colorScheme:"blue"});OTP.app.applyTheme(false)'); await click('.otp-fold-toggle'); await fill('#quick-otp-input', secret);
   await wait('document.querySelector("#quick-generator").dataset.otpStatus === "ready"'); await shot('popup-dark');
   await evaluate(cdp, 'OTP.store.persist()');
-  await setViewport(cdp, 1440, 900, 1); await goto('/index.html'); await unlock();
+  await setViewport(cdp, 1440, 900, 1); await goto('/index.html'); await wait('!!document.querySelector("#screen.is-in") && !document.querySelector(".lock")');
   await evaluate(cdp, 'OTP.store.patchSettings({view:"grid",theme:"light"});OTP.app.applyTheme(false);OTP.app.renderAll({stagger:false})');
   await sleep(450); await shot('dashboard-light');
   await evaluate(cdp, 'OTP.store.patchSettings({theme:"dark"});OTP.app.applyTheme(false)'); await shot('dashboard-dark');

@@ -6,6 +6,8 @@
     const { uid } = OTP;
     const totp = OTP.totp;
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const identity = account => account.email ? "email:" + account.email.trim().toLowerCase()
+      : "otp:" + [account.secret, account.algorithm || "SHA1", account.digits || 6, account.period || 30].join(":");
 
     /**
      * 支持两种行：
@@ -19,13 +21,15 @@
       const rows = [];
       const seen = new Map();
       const existing = new Map(
-        state.accounts.map((a) => [a.email.trim().toLowerCase(), a])
+        state.accounts.map((a) => [identity(a), a])
       );
 
       lines.forEach((raw, index) => {
-        const line = raw.replace(/\s+$/, "");
+        let line = raw.replace(/\s+$/, "");
         const lineNo = index + 1;
         if (!line.trim()) return;
+        const standalone = totp.validateSecret(line.trim());
+        if (standalone.ok) line = "otpauth://totp/?secret=" + standalone.normalized;
 
         // ---- otpauth:// ----
         const otpIndex = line.toLowerCase().indexOf("otpauth://");
@@ -40,11 +44,7 @@
             return;
           }
           const email = parsed.email || parsed.account || "";
-          if (!email) {
-            rows.push({ line: lineNo, kind: "bad", reason: "链接里没有邮箱或账号名" });
-            return;
-          }
-          const key = email.toLowerCase();
+          const key = identity({ ...parsed, email });
           const dupOf = existing.get(key);
           const row = {
             line: lineNo,
@@ -114,7 +114,7 @@
         return { line: lineNo, kind: "bad", reason: check.error, email };
       }
 
-      const key = email.toLowerCase();
+      const key = identity({ email });
       const dupOf = existing.get(key);
       const extra = extras || {};
       const row = {
@@ -281,7 +281,7 @@
       if (!payload || typeof payload !== "object") throw new Error("备份文件格式不正确");
       if (!Array.isArray(payload.accounts)) throw new Error("备份里没有账号列表");
 
-      const known = new Set(state.accounts.map((a) => a.email.toLowerCase()));
+      const known = new Set(state.accounts.map(identity));
       const catMap = new Map();
       if (Array.isArray(payload.categories)) {
         for (const cat of payload.categories) {
@@ -300,7 +300,7 @@
           skipped += 1;
           continue;
         }
-        const key = account.email.toLowerCase();
+        const key = identity(account);
         if (known.has(key)) {
           skipped += 1;
           continue;

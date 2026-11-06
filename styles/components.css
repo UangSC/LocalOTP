@@ -30,7 +30,7 @@ body[data-surface="popup"] .screen {
   flex-direction: column;
   background: var(--bg);
   opacity: 0;
-  transform: scale(0.985) translateY(5px);
+  transform: none;
   pointer-events: none;
   transition: opacity var(--t-4) var(--e-out), transform var(--t-4) var(--e-out);
 }
@@ -147,7 +147,7 @@ body[data-surface="popup"] .screen.is-in {
 }
 
 .ibtn:active {
-  transform: scale(0.9);
+  transform: none;
 }
 
 .ibtn[aria-expanded="true"],
@@ -301,7 +301,7 @@ kbd {
 }
 
 .search-clear:active {
-  transform: scale(0.88);
+  transform: none;
 }
 
 .search-clear .i {
@@ -396,7 +396,7 @@ kbd {
 }
 
 .sort-btn:active {
-  transform: scale(0.95);
+  transform: none;
 }
 
 .sort-btn .i {
@@ -514,7 +514,7 @@ kbd {
 }
 
 .item:active {
-  transform: scale(0.995);
+  transform: none;
   transition-duration: var(--t-1);
 }
 
@@ -576,13 +576,13 @@ kbd {
 
 .item.is-dim {
   opacity: 0.28;
-  filter: saturate(0.32) contrast(0.96);
-  transform: scale(0.99);
+  filter: none;
+  transform: none;
 }
 
 .item.is-dim:hover {
   opacity: 0.52;
-  filter: saturate(0.7);
+  filter: none;
 }
 
 .item.is-active {
@@ -651,7 +651,6 @@ mark.hl {
   box-shadow: var(--shadow-xs);
   transform: translateX(var(--x, 0px));
   transition: transform 340ms var(--e-spring);
-  will-change: transform;
 }
 
 .sw-thumb.is-instant {
@@ -720,7 +719,7 @@ mark.hl {
   letter-spacing: -.03em;
 }
 .item:hover .avatar { transform: translateY(-1px); }
-.item:active .avatar { transform: scale(.96); }
+.item:active .avatar { transform: none; }
 .sw-thumb { pointer-events: none; }
 .sw-ico { width: 30px; height: 26px; border-radius: var(--pill); }
 .row-more, .q-pin { opacity: .65; }
@@ -830,7 +829,7 @@ mark.hl {
 }
 
 .mini:active {
-  transform: scale(0.82);
+  transform: none;
 }
 
 /* 复制成功：图标换成勾、泛起品牌色、轻轻放大回弹 */
@@ -864,10 +863,9 @@ mark.hl {
     box-shadow var(--t-2) var(--e-out);
 }
 
-.row:hover .code,
-.card:hover .code {
+.row:hover .code {
   color: var(--brand-ink);
-  box-shadow: 0 0 0 4px var(--brand-soft);
+  box-shadow: none;
 }
 
 .item.is-copied .code {
@@ -875,7 +873,7 @@ mark.hl {
 }
 
 .code.is-new {
-  animation: lotp-code-in 380ms var(--e-out);
+  animation: lotp-code-in 150ms var(--e-out);
 }
 
 .code.is-loading {
@@ -954,7 +952,7 @@ mark.hl {
 
 .ring-num {
   position: relative;
-  font-size: var(--fs-2xs);
+  font-size: 13px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -972,7 +970,7 @@ mark.hl {
 
 .ring[data-state="hot"] {
   color: var(--ring-hot);
-  animation: lotp-breathe 1.15s var(--e-inout) infinite;
+  animation: none;
   animation-delay: var(--pulse-delay, 0ms);
 }
 
@@ -1032,11 +1030,11 @@ mark.hl {
 }
 
 .card-top .ring {
-  --ring-size: 26px;
+  --ring-size: 32px;
 }
 
 .card-top .ring-num {
-  font-size: 8.5px;
+  font-size: 13px;
 }
 
 .card-email {
@@ -1110,7 +1108,7 @@ mark.hl {
 .q-id {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 5px;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -1133,11 +1131,11 @@ mark.hl {
 }
 
 .quick .ring {
-  --ring-size: 26px;
+  --ring-size: 32px;
 }
 
 .quick .ring-num {
-  font-size: 8.5px;
+  font-size: 13px;
 }
 
 /* ---- 三枚复制键 -------------------------------------------------------- */
@@ -1177,7 +1175,7 @@ mark.hl {
 }
 
 .qact:active {
-  transform: scale(0.94);
+  transform: none;
 }
 
 .qact.is-done {
@@ -1267,7 +1265,7 @@ mark.hl {
 }
 
 .q-pin:active {
-  transform: scale(0.86);
+  transform: none;
 }
 
 .q-pin.is-on {
@@ -1300,7 +1298,7 @@ mark.hl {
 /* 聚焦锁定下，其余条目收得更暗，视线只剩一条 */
 .list.has-focus .item.is-dim {
   opacity: 0.14;
-  filter: saturate(0.15) blur(0.2px);
+  filter: none;
 }
 
 .list.has-focus .item.is-dim:hover {
@@ -1359,7 +1357,7 @@ mark.hl {
 }
 
 .focus-pill-x:active {
-  transform: scale(0.86);
+  transform: none;
 }
 
 /* kbd 里的小箭头也用 SVG，不用字符 */
@@ -1528,7 +1526,7 @@ kbd.is-key {
 }
 
 .dock-add:active {
-  transform: scale(0.93);
+  transform: none;
 }
 
 .dock-left {
@@ -1630,7 +1628,7 @@ kbd.is-key {
 }
 
 .btn:active {
-  transform: scale(0.972);
+  transform: none;
 }
 
 .btn-primary {
@@ -1645,7 +1643,7 @@ kbd.is-key {
 }
 
 .btn-primary:active {
-  transform: scale(0.972);
+  transform: none;
 }
 
 .btn-primary:disabled {
@@ -1958,7 +1956,7 @@ kbd.is-key {
 }
 
 .cat:active {
-  transform: scale(0.95);
+  transform: none;
 }
 
 .cat.is-on {

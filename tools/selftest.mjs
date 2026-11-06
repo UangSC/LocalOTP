@@ -376,6 +376,18 @@ await OTP.store.init();
 check("持久化重读保留周期", OTP.store.accounts().find(a => a.email === "period@example.com").period, 45);
 check("损坏的 otpauth 标签被标记无效而不抛异常", OTP.store.parseImport("otpauth://totp/%FF?secret=JBSWY3DPEHPK3PXP").stats.bad, 1);
 
+section("纯 OTP 导入与无邮箱备份");
+const onlyOtpRows = OTP.store.parseImport("JBSWY3DPEHPK3PXQ\nJBSWY3DPEHPK3PXR");
+check("两条纯密钥均可导入", onlyOtpRows.stats.fresh, 2);
+OTP.store.applyImport(onlyOtpRows.rows, "skip");
+check("重复纯密钥正确识别", OTP.store.parseImport("JBSWY3DPEHPK3PXQ").stats.dup, 1);
+check("空邮箱备份按不同密钥区分", OTP.store.importPayload({accounts:[
+  {id:'only-otp-one',email:'',secret:'JBSWY3DPEHPK3PXS'},
+  {id:'only-otp-two',email:'',secret:'JBSWY3DPEHPK3PXT'},
+]}).added, 2);
+await OTP.store.persist(); await OTP.store.init();
+check("纯 OTP 持久化保留空邮箱与空密码", OTP.store.accounts().filter(a=>!a.email&&!a.password).length, 4);
+
 /* ── 结果 ───────────────────────────────────────────────────────────────── */
 
 process.stdout.write("\n");

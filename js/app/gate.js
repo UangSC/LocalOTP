@@ -16,7 +16,7 @@
       const title = el("h1", { text: isCreate ? "先设一个管理密码" : "LocalOTP" });
       const sub = el("p", {
         class: "lock-sub",
-        text: isCreate ? "之后每次打开都要输入它，仅用于阻止他人随手查看" : "输入管理密码，解锁本地验证码库",
+        text: isCreate ? "默认验证后 15 分钟内重开免密，可在设置中调整" : "输入管理密码，解锁本地验证码库",
       });
 
       const firstWrap = pwWrap(isCreate ? "设置管理密码（至少 4 位）" : "管理密码", "lock");
@@ -333,6 +333,13 @@
 
     async function lock({ revoke = true } = {}) {
       if (runtime.lockNode || runtime.transitioning) return;
+      runtime.transitioning = true;
+      if (revoke && store.settings().passwordRequired === false) {
+        store.patchSettings({ passwordRequired: true });
+        try { await store.persist(); }
+        catch (_) { runtime.transitioning = false; ui.toast("恢复密码验证失败，请重试", "bad"); return; }
+        ui.toast("已恢复密码验证");
+      }
       runtime.transitioning = true;
       setContentInert(true);
       if (revoke) OTP.access.revoke().catch(() => ui.toast("会话清理失败，请关闭浏览器后重新打开", "bad"));
