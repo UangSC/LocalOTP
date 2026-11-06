@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOnExit, setViewport } from './cdp.mjs';
-const output = resolve(process.env.LOCALOTP_SHOTS_DIR || 'docs/shots/window-1.6'); mkdirSync(output, { recursive: true });
+const output = resolve(process.env.LOCALOTP_SHOTS_DIR || 'artifacts/window-1.6'); mkdirSync(output, { recursive: true });
 const profile = createBrowserProfile('window-'), port = 9396;
 const browser = spawn(findBrowser(), ['--headless=new', '--no-first-run', '--no-default-browser-check', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, `--load-extension=${process.cwd()}`, 'about:blank'], { stdio: 'ignore', windowsHide: true });
 cleanProfileOnExit(browser, profile);
@@ -55,6 +55,7 @@ try {
   const syncBeforeInspect=await evaluate(worker,'chrome.storage.sync.get(null).then(JSON.stringify)');
   await click(page,'#sync-inspect');await until(page,'!document.querySelector("#sync-diagnostics").hidden');
   check('真实只读诊断显示本机与同步缓存条数',await evaluate(page,'document.querySelector("#sync-diagnostics").textContent.includes("本机账号 10 条") && document.querySelector("#sync-diagnostics").textContent.includes("同步缓存账号 0 条")'));
+  check('空缓存诊断说明运行时版本与浏览器传输检查',await evaluate(page,'document.querySelector("#sync-diagnostics").textContent.includes(chrome.runtime.getManifest().version) && document.querySelector("#sync-diagnostics").textContent.includes("Extension Settings") && !document.querySelector("#sync-diagnostics").textContent.includes("旧数据属于另一个 ID")'));
   check('只读诊断不写入同步存储',await evaluate(worker,'chrome.storage.sync.get(null).then(JSON.stringify)')===syncBeforeInspect);
   await click(page, '#remember-toggle');
   await until(page, 'document.querySelector(".dialog").classList.contains("is-open")');

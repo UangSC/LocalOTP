@@ -187,7 +187,7 @@ async function main() {
   await sleep(150);
   await evaluate(
     cdp,
-    `(() => { const i = document.querySelector('#search-input'); i.value = 'steam'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
+    `(() => { const i = document.querySelector('#search-input'); i.value = 'demo arcade'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
   );
   await sleep(700);
   await shoot(cdp, "06-search", "聚光搜索：命中提亮、其余压暗");

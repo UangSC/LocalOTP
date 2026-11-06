@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { createHmac } from 'node:crypto';
 import { CDP, evaluate, findBrowser, sleep, createBrowserProfile, cleanProfileOnExit, setViewport } from './cdp.mjs';
 
-const output = resolve('docs/shots/studio-1.5'); mkdirSync(output, { recursive: true });
+const output = resolve('artifacts/studio-1.5'); mkdirSync(output, { recursive: true });
 const profile = createBrowserProfile('otp-');
 const port = 9386;
 const child = spawn(findBrowser(), ['--headless=new', '--no-first-run', '--no-default-browser-check',
@@ -157,7 +157,7 @@ try {
   await shot('popup-light');
   await key('k', 4); // CDP Meta modifier。
   check('Command K 在 macOS 模式聚焦搜索', await evaluate(cdp, 'document.activeElement.id === "search-input"'));
-  await fill('#search-input', 'github');
+  await fill('#search-input', 'demo source');
   check('临时计算不会污染账号搜索', await evaluate(cdp, 'document.querySelector("#quick-generator").dataset.otpStatus === "ready" && OTP.store.stats().count === 10'));
   await fill('#search-input', ''); await click('#lock-btn'); await wait('!!document.querySelector(".lock") && !document.body.dataset.gateMotion');
   check('锁屏立即清除临时密钥与结果', await evaluate(cdp, '!document.querySelector("#quick-otp-input").value && document.querySelector(".otp-copy").disabled'));

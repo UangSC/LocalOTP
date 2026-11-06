@@ -23,7 +23,7 @@ async function openEditor() {
 }
 async function screenshot(name) {
   const {data}=await cdp.send("Page.captureScreenshot",{format:"png"});
-  writeFileSync(resolve("docs/shots",name),Buffer.from(data,"base64"));
+  writeFileSync(resolve("artifacts",name),Buffer.from(data,"base64"));
 }
 try {
   await cdp.send("Page.enable"); await cdp.send("Runtime.enable");

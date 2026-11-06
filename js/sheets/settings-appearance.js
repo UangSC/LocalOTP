@@ -1,0 +1,107 @@
+/* 外观设置。 */
+(function (global) {
+  "use strict";
+  const OTP = global.OTP, store = OTP.store, ui = OTP.ui;
+  const { el, icon } = OTP;
+  const { group, setRow, changed } = OTP.sheetUI;
+  OTP.sheetParts.appearanceSettings = function () {
+    const settings = store.settings();
+    const body = document.createDocumentFragment();
+    /* ---- 外观 ---- */
+
+    const themeSeg = ui.segmented({
+      active: settings.theme,
+      className: "seg-sm",
+      items: [
+        { id: "auto", label: "跟随系统" },
+        { id: "light", label: "浅色" },
+        { id: "dark", label: "深色" },
+      ],
+      onChange: (id) => {
+        store.patchSettings({ theme: id });
+        if (global.OTP.app && OTP.app.applyTheme) OTP.app.applyTheme(true);
+      },
+    });
+
+    const colorButtons = [];
+    const colorChoices = el("div", { class: "color-choices", role: "radiogroup", "aria-label": "界面色系" });
+    function updateColors() {
+      const current = store.settings().colorScheme;
+      for (const button of colorButtons) {
+        const selected = button.dataset.colorChoice === current;
+        button.setAttribute("aria-checked", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      }
+    }
+    store.COLOR_SCHEMES.forEach((scheme, index) => {
+      const button = el("button", {
+        class: "color-choice", type: "button", role: "radio", "aria-label": scheme.label + "：" + scheme.description,
+        dataset: { colorChoice: scheme.id },
+        onclick: () => {
+          if (store.settings().colorScheme === scheme.id) return;
+          store.patchSettings({ colorScheme: scheme.id });
+          updateColors();
+          OTP.app.applyTheme(true);
+        },
+        onkeydown: event => {
+          let next;
+          if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % colorButtons.length;
+          else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (index + colorButtons.length - 1) % colorButtons.length;
+          else if (event.key === "Home") next = 0;
+          else if (event.key === "End") next = colorButtons.length - 1;
+          if (next !== undefined) {
+            event.preventDefault(); event.stopPropagation();
+            colorButtons[next].focus(); colorButtons[next].click();
+          }
+        },
+      }, el("span", { class: "color-swatch", "aria-hidden": "true" }, el("i"), el("i"), el("i")),
+      el("span", { class: "color-name", text: scheme.label }),
+      el("span", { class: "color-selected", html: icon("check", 10), "aria-hidden": "true" }));
+      colorButtons.push(button); colorChoices.append(button);
+    });
+    updateColors();
+    const colorRow = el("div", { class: "color-setting" },
+      el("div", { class: "color-setting-head" }, el("span", { text: "色系" }), el("span", { text: "五套配色 · 均支持浅色与深色" })), colorChoices);
+
+    const viewSeg = ui.segmented({
+      active: settings.view,
+      className: "seg-sm",
+      items: [
+        { id: "list", label: "列表" },
+        { id: "grid", label: "卡片" },
+      ],
+      onChange: (id) => {
+        store.patchSettings({ view: id });
+        changed("view");
+      },
+    });
+
+    const isPageSurface = document.body.dataset.surface === "page";
+    const appearanceRows = [
+      setRow({
+        icon: "sun",
+        label: "主题",
+        desc: isPageSurface ? "影响管理页与弹窗" : "影响弹窗与管理页",
+        control: themeSeg.node,
+      }),
+      colorRow,
+    ];
+
+    // 弹窗恒为"快速复制行"，没有列表 / 卡片之分——这里不摆一个无效开关
+    if (isPageSurface) {
+      appearanceRows.push(
+        setRow({
+          icon: settings.view === "grid" ? "grid" : "list",
+          label: "默认视图",
+          desc: "列表适合快速扫，卡片适合手点",
+          control: viewSeg.node,
+        })
+      );
+    }
+
+    body.append(group("外观", appearanceRows));
+
+
+    return {body, refresh() { updateColors(); themeSeg.setActive(store.settings().theme); }};
+  };
+})(globalThis);

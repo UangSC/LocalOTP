@@ -31,6 +31,7 @@
     async remember() { return accept(await request("remember")); },
     async ticket() { const result = await request("ticket"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result.ticket; },
     async float() { const result = await request("float"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result; },
+    async openPage() { const result = await request("page"); if (!result.ok) throw new Error("当前页面授权已失效，请锁定后重新解锁"); return result; },
     async revoke() {
       proof = ""; expires = 0;
       if (!available) return;

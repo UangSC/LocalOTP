@@ -1,6 +1,6 @@
 /* MV3 后台：弹窗关闭后继续同步，失败后由 alarm 重试。 */
 globalThis.window = globalThis;
-importScripts("util.js", "totp.js", "seed.js", "sync.js", "store.js");
+importScripts("util.js", "totp.js", "seed.js", "sync.js", "store/security.js", "store/search.js", "store/import.js", "store.js");
 importScripts("otp-input.js", "omnibox.js");
 importScripts("access-service.js");
 const ready = OTP.store.init();
@@ -20,6 +20,33 @@ let timer;
 let syncing = false;
 let again = false;
 let floatingChain = Promise.resolve();
+let managementChain = Promise.resolve();
+function openManagement(message, caller) {
+  const task = managementChain.catch(() => {}).then(async () => {
+    const result = await accessService.request({ ...message, action: "ticket" }, caller);
+    if (!result.ok) return result;
+    const url = chrome.runtime.getURL("index.html");
+    const expected = new URL(url);
+    try {
+      // 查询自有扩展页面无需读取其他站点权限；并发打开也只创建一个管理页。
+      const tabs = (await chrome.tabs.query({})).filter(tab => {
+        try { const target = new URL(tab.pendingUrl || tab.url); return target.protocol === expected.protocol && target.hostname === expected.hostname && target.pathname === "/index.html"; }
+        catch (_) { return false; }
+      });
+      const existing = tabs.find(tab => !tab.discarded) || tabs[0];
+      if (existing) {
+        // 不更新 URL、不刷新文档，也不自动解锁已经锁定的管理页。
+        await chrome.tabs.update(existing.id, { active: true });
+        await chrome.windows.update(existing.windowId, { focused: true });
+        return { ok: true, reused: true, tabId: existing.id };
+      }
+      const tab = await chrome.tabs.create({ url: url + "#unlock=" + encodeURIComponent(result.ticket), active: true });
+      return { ok: true, reused: false, tabId: tab.id };
+    } catch (_) { return { ok: false, code: "PAGE_OPEN_FAILED", error: "浏览器未能打开管理页，请重试" }; }
+  });
+  managementChain = task;
+  return task;
+}
 function openFloating(ticket) {
   const task = floatingChain.catch(() => {}).then(async () => {
     const key = "localotp:floating-window:v1";
@@ -55,7 +82,9 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (message?.type === "localotp:access") {
     const caller = OTP.accessCaller(message, sender, chrome.runtime.id);
     if (!caller) { reply({ ok: false, code: "INVALID_CONTEXT", error: "无法识别当前扩展页面，请重新加载扩展" }); return; }
-    const task = message.action === "float"
+    const task = message.action === "page"
+      ? openManagement(message, caller)
+      : message.action === "float"
       ? accessService.request({ ...message, action: "ticket" }, caller).then(result => result.ok ? openFloating(result.ticket).catch(() => ({ ok: false, code: "WINDOW_CREATE_FAILED", error: "浏览器未能创建独立窗口，请检查浏览器策略后重试" })) : result)
       : accessService.request(message, caller);
     task.then(reply, () => reply({ ok: false, code: "SESSION_FAILED", error: "浏览器会话存储操作失败，请重新加载扩展" }));
@@ -75,8 +104,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     chrome.alarms.clear("localotp:sync");
     return;
   }
-  const data = (v) => JSON.stringify([v?.accounts, v?.categories, v?.tombstones, v?.categoryTombstones]);
-  if (!old?.settings?.syncEnabled || data(old) !== data(next)) schedule();
+  const data = (v) => [v?.accounts, v?.categories, v?.tombstones, v?.categoryTombstones];
+  if (!old?.settings?.syncEnabled || !OTP.syncModel.equal(data(old), data(next))) schedule();
 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "localotp:sync") synchronize();

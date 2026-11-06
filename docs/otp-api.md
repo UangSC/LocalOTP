@@ -1,4 +1,4 @@
-# 本地验证码入口（1.5.0）
+# 本地验证码入口
 
 LocalOTP 提供扩展内的验证码页面。安装扩展后即可使用，不需要服务器、登录、保存账号或开放端口。所有计算都由 Web Crypto 在浏览器本机完成。
 
@@ -8,15 +8,15 @@ LocalOTP 提供扩展内的验证码页面。安装扩展后即可使用，不�
 2. 按 Tab 或空格，确认地址栏进入 **LocalOTP** 模式。
 3. 粘贴 Base32 密钥或完整 `otpauth://totp/…` 链接，回车。
 
-公开示例：`otp JBSWY3DPEHPK3PXP`。示例密钥不可用于真实账号。
+输入格式：`otp YOUR_BASE32_SECRET`，将占位符替换为待计算的 Base32 密钥；公开测试数据见 `examples/sync-test.txt`。
 
 ## 页面 URL 接口
 
-在设置的“临时验证码与地址栏 API”中复制本机入口地址。扩展 ID 由安装方式与浏览器决定，请使用自己的 ID。
+在设置的“临时验证码与地址栏 API”中复制本机入口地址。固定公钥版本使用 README 中的固定 ID；入口地址以当前运行的扩展为准。
 
 ```text
-chrome-extension://<扩展ID>/api.html#otp=JBSWY3DPEHPK3PXP
-chrome-extension://<扩展ID>/api.html#otp=JBSWY3DPEHPK3PXP&algorithm=SHA256&digits=8&period=45
+chrome-extension://<扩展ID>/api.html#otp=YOUR_BASE32_SECRET
+chrome-extension://<扩展ID>/api.html#otp=YOUR_BASE32_SECRET&algorithm=SHA256&digits=8&period=45
 ```
 
 | 参数 | 含义 | 默认 / 范围 |

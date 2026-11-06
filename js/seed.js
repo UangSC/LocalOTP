@@ -1,6 +1,6 @@
 /* ==========================================================================
    LocalOTP · seed
-   虚构演示账号：密钥全部是公开示例，邮箱域名只用 example / 通用域。
+   公开生成的演示账号，仅使用不可投递的 example.invalid 域名；不得用于真实服务。
    ========================================================================== */
 
 (function (global) {
@@ -18,89 +18,162 @@
     { id: "cat_bank", name: "金融", icon: "bank" },
   ];
 
-  const RAW = [
-    {
-      email: "aurora.tang@example.com",
-      password: "Aurora#Store2026!",
-      secret: "JBSWY3DPEHPK3PXP",
-      issuer: "GitHub",
-      categoryId: "cat_dev",
-      note: "主力仓库，别删",
-    },
-    {
-      email: "stack.dev+ci@example.com",
-      password: "Ci!Bot#8890",
-      secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
-      issuer: "GitLab",
-      categoryId: "cat_dev",
-    },
-    {
-      email: "hello@example.org",
-      password: "Pr0ton!Mail",
-      secret: "KRSXG5CTMVRXEZLU",
-      issuer: "Proton Mail",
-      categoryId: "cat_cloud",
-    },
-    {
-      email: "q7.lab@example.com",
-      password: "Steam!!7782",
-      secret: "MFRGGZDFMZTWQ2LK",
-      issuer: "Steam",
-      categoryId: "cat_play",
-      note: "家庭共享小号",
-    },
-    {
-      email: "mika.wu@example.com",
-      password: "MikaNotion_26",
-      secret: "ONTXG3THMR2GK6LP",
-      issuer: "Notion",
-      categoryId: "cat_work",
-    },
-    {
-      email: "trial.4821@example.com",
-      password: "Figma$Trial",
-      secret: "NBSWY3DPEB3W64TMMQ",
-      issuer: "Figma",
-      categoryId: "cat_work",
-      algorithm: "SHA256",
-      digits: 8,
-    },
-    {
-      email: "robot@example.net",
-      password: "Cf!Robot#2026",
-      secret: "MZXW6YTBOI3W64TMMQ",
-      issuer: "Cloudflare",
-      categoryId: "cat_cloud",
-      period: 60,
-    },
-    {
-      email: "backup.only@example.com",
-      password: "Backup#Only19",
-      secret: "PFSXGIDNNF2G64TBM5SXG",
-      issuer: "找回专用",
-      categoryId: "cat_bank",
-      note: "仅用于找回，勿在日常登录使用",
-    },
-    {
-      email: "pixel.fern@example.com",
-      password: "Pixel!Fern12",
-      secret: "JBSWY3DPFQQFO33SNRSCC",
-      issuer: "Discord",
-      categoryId: "cat_play",
-    },
-    {
-      email: "sora.ink@example.com",
-      password: "SoraInk2026!",
-      secret: "MZXW6YTBOI3W64TMMQ======",
-      issuer: "Adobe",
-      categoryId: "cat_work",
-      algorithm: "SHA512",
-    },
-  ];
+  // demo-data:start
+  const DEMO = {
+    "batch": "3e81f542",
+    "accounts": [
+      {
+        "email": "demo-3e81f542-01@example.invalid",
+        "password": "PUBLIC-DEMO-Dt9i2U4-cspF!",
+        "secret": "PB3PUORYJDEH6ZWJYRFCOUMSPBAW4NHW",
+        "issuer": "Demo Source",
+        "categoryId": "cat_dev",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-02@example.invalid",
+        "password": "PUBLIC-DEMO-VjE5-sbdJFkF!",
+        "secret": "2NDRULPDKJOT6G6GB56Z55TVR2AVKMYA",
+        "issuer": "Demo Review",
+        "categoryId": "cat_dev",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-03@example.invalid",
+        "password": "PUBLIC-DEMO-b-WgHZDGZbkn!",
+        "secret": "WFDTMIHBLILMNETCVV5JYCU5UW2Z7Q5L",
+        "issuer": "Demo Mail",
+        "categoryId": "cat_cloud",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-04@example.invalid",
+        "password": "PUBLIC-DEMO-SEkDSF4qg_sW!",
+        "secret": "XQZS7Y6D6XOKVPTEEAH5XFDJ4YGEUD4X",
+        "issuer": "Demo Arcade",
+        "categoryId": "cat_play",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-05@example.invalid",
+        "password": "PUBLIC-DEMO-kUzckACvYOQo!",
+        "secret": "M724FLE3DRG4HFN3LR2QE66VQGFNQ3XG",
+        "issuer": "Demo Notes",
+        "categoryId": "cat_work",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-06@example.invalid",
+        "password": "PUBLIC-DEMO-Au9xmCfX9pCF!",
+        "secret": "LAFDUVYBV24QUVU54NXXCH2PLP73RM67",
+        "issuer": "Demo Design",
+        "categoryId": "cat_work",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA256",
+        "digits": 8,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-07@example.invalid",
+        "password": "PUBLIC-DEMO-xqXGfCqn2Rg6!",
+        "secret": "JMGXFF7A5RLKFHVAVMX2OYBRUJEXJYXB",
+        "issuer": "Demo Cloud",
+        "categoryId": "cat_cloud",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 60
+      },
+      {
+        "email": "demo-3e81f542-08@example.invalid",
+        "password": "PUBLIC-DEMO-hlCreEOFAeNd!",
+        "secret": "VTZM2DA3D53KODI46QRCU23XDFC3LB7X",
+        "issuer": "Demo Recovery",
+        "categoryId": "cat_bank",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-09@example.invalid",
+        "password": "PUBLIC-DEMO-f-BPayCManFm!",
+        "secret": "DXV6A7NCD6VIY425NHYGGZF2CT6MGRFB",
+        "issuer": "Demo Chat",
+        "categoryId": "cat_play",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-10@example.invalid",
+        "password": "PUBLIC-DEMO-gqG59UaWeOiL!",
+        "secret": "KCXAWVFXNPIOZVX6WLXJMPVO65D34WEC",
+        "issuer": "Demo Studio",
+        "categoryId": "cat_work",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA512",
+        "digits": 6,
+        "period": 30
+      }
+    ],
+    "imports": [
+      {
+        "email": "demo-3e81f542-11@example.invalid",
+        "password": "PUBLIC-DEMO-Tbkh7xkduxTf!",
+        "secret": "Q66A4GV5GZOXRLMNQ3NNBM2W4CKSIXLU",
+        "issuer": "Demo Import",
+        "categoryId": "",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-12@example.invalid",
+        "password": "PUBLIC-DEMO-tYiMmYZkrt5E!",
+        "secret": "YJIHEJYUDENJEGQJ3HXP5IQYMYJPOBTT",
+        "issuer": "Demo Import",
+        "categoryId": "",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      },
+      {
+        "email": "demo-3e81f542-13@example.invalid",
+        "password": "PUBLIC-DEMO-30dtUgzdzlIM!",
+        "secret": "HD5HKXVYELDADEC6FX7E7BFYY75YDA43",
+        "issuer": "Demo Import",
+        "categoryId": "",
+        "note": "公开演示数据，不对应真实账号；密码和密钥禁止用于真实服务。",
+        "algorithm": "SHA1",
+        "digits": 6,
+        "period": 30
+      }
+    ]
+  };
+  // demo-data:end
 
   function accounts(now) {
     const t0 = now || Date.now();
-    return RAW.map((r, i) => ({
+    return DEMO.accounts.map((r, i) => ({
       id: uid("acc_"),
       email: r.email,
       password: r.password,
@@ -120,12 +193,12 @@
     return CATEGORIES.map((c) => ({ ...c, createdAt: Date.now() }));
   }
 
+  const line = account => `${account.email}----${account.password}----${account.secret}`;
   const SAMPLE_IMPORT = [
-    "nova.wren@example.com----Nova#Store2026!----JBSWY3DPEHPK3PXP",
-    "kai.tan@example.com----Kai!Tan#8890----GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
-    "aurora.tang@example.com----Replaced!2026----KRSXG5CTMVRXEZLU",
-    "broken@example.com----pass123----JBSWY3DP1NVALID",
-    "otpauth://totp/Vega%20Studio:vega@example.com?secret=NBSWY3DPEB3W64TMMQ&issuer=Vega%20Studio&digits=8",
+    ...DEMO.imports.slice(0, 2).map(line),
+    line({ ...DEMO.accounts[0], password: DEMO.imports[0].password, secret: DEMO.imports[0].secret }),
+    "invalid@example.invalid----PUBLIC-DEMO-INVALID----NOT_A_VALID_SECRET!",
+    `otpauth://totp/Demo%20Import:${DEMO.imports[2].email}?secret=${DEMO.imports[2].secret}&issuer=Demo%20Import&digits=8`,
   ].join("\n");
 
   OTP.seed = { accounts, categories, SAMPLE_IMPORT };

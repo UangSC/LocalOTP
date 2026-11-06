@@ -1,0 +1,13 @@
+{
+  "name": "localotp",
+  "version": "0.9.0",
+  "private": true,
+  "description": "本地 TOTP 账号管理扩展；存储风险见 README",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "preview": "node tools/serve.mjs",
+    "test": "node tools/test.mjs",
+    "check": "node tools/check-project.mjs",
+    "demo:generate": "node tools/generate-demo.mjs"
+  }
+}

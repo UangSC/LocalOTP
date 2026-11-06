@@ -39,10 +39,10 @@ async function unlock() {
 }
 async function shot(name) {
   const { data } = await cdp.send("Page.captureScreenshot", { format: "png" });
-  writeFileSync(resolve("docs/shots", name), Buffer.from(data, "base64"));
+  writeFileSync(resolve("artifacts", name), Buffer.from(data, "base64"));
 }
 try {
-  mkdirSync(resolve("docs/shots"), { recursive: true });
+  mkdirSync(resolve("artifacts"), { recursive: true });
   await cdp.send("Page.enable"); await cdp.send("Runtime.enable");
   await setViewport(cdp, 1440, 900, 1);
   const url = `http://127.0.0.1:${port}/index.html`;

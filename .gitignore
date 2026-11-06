@@ -9,6 +9,15 @@ localotp-backup-*.json
 # 运行依赖、缓存与系统文件。
 node_modules/
 dist/
+artifacts/
+coverage/
+*.har
+*.heapsnapshot
+*.crx
+*.pfx
+*.p12
+*.sqlite
+*.db
 __pycache__/
 *.pyc
 *.log

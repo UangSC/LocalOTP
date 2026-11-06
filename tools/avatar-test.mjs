@@ -6,7 +6,7 @@ import {CDP,evaluate,findBrowser,goto,launchBrowser,setViewport,sleep,startServe
 const {server,port}=await startServer(process.cwd());
 const {process:browser,target}=await launchBrowser(findBrowser(),9381);
 const cdp=await CDP.connect(target.webSocketDebuggerUrl);
-const output=resolve("docs/shots/avatars");mkdirSync(output,{recursive:true});
+const output=resolve("artifacts/avatars");mkdirSync(output,{recursive:true});
 const metrics=[],errors=[];let count=0;
 function check(name,value){assert.ok(value,name);count++;console.log("✓ "+name);}
 async function shot(name){const {data}=await cdp.send("Page.captureScreenshot",{format:"png"});writeFileSync(resolve(output,name+".png"),Buffer.from(data,"base64"));}

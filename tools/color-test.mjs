@@ -6,7 +6,7 @@ import {CDP,evaluate,findBrowser,goto,launchBrowser,setViewport,sleep,startServe
 const {server,port}=await startServer(process.cwd());
 const {process:browser,target}=await launchBrowser(findBrowser(),9379);
 const cdp=await CDP.connect(target.webSocketDebuggerUrl);
-const output=resolve("docs/shots/colors");mkdirSync(output,{recursive:true});
+const output=resolve("artifacts/colors");mkdirSync(output,{recursive:true});
 let count=0;const errors=[];const metrics=[];
 async function check(name,condition){assert.ok(condition,name);count++;console.log("✓ "+name);}
 async function click(selector){

@@ -163,7 +163,7 @@ async function main() {
 
   await evaluate(
     cdp,
-    `(() => { const i = document.querySelector('#search-input'); i.value = 'gitlab'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
+    `(() => { const i = document.querySelector('#search-input'); i.value = 'demo review'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
   );
   await sleep(500);
   const hitCount = num(await evaluate(cdp, "document.querySelectorAll('#list .item.is-match').length"));
@@ -738,7 +738,10 @@ async function main() {
   }
   assert("解锁时面板在放大", sawPanel === true);
   assert("解锁时页面内容连续显现", sawPart === true);
-  await sleep(1200);
+  for (let i = 0; i < 100; i++) {
+    if ((await evaluate(cdp, "getComputedStyle(document.querySelector('.sidebar')).opacity")) === "1") break;
+    await sleep(40);
+  }
   assert("入场结束后骨架完全可见", (await evaluate(cdp, "getComputedStyle(document.querySelector('.sidebar')).opacity")) === "1");
 
   await evaluate(
@@ -758,7 +761,7 @@ async function main() {
 
   await evaluate(
     cdp,
-    `(() => { const i = document.querySelector('#page-search'); i.value = 'gitlab'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
+    `(() => { const i = document.querySelector('#page-search'); i.value = 'demo review'; i.dispatchEvent(new Event('input', {bubbles:true})); return true; })()`
   );
   await sleep(500);
   assert(

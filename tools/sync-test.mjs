@@ -47,7 +47,7 @@ function device(remote, local = backend()) {
   local.listeners.add(notify); remote.listeners.add(notify);
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  for (const file of ["util.js", "totp.js", "seed.js", "sync.js", "store.js"]) {
+  for (const file of ["util.js", "totp.js", "seed.js", "sync.js", "store/security.js", "store/search.js", "store/import.js", "store.js"]) {
     vm.runInContext(readFileSync(resolve("js", file), "utf8"), sandbox, { filename: file });
   }
   return { store: sandbox.OTP.store, model: sandbox.OTP.syncModel, sandbox, local,
@@ -109,6 +109,13 @@ check("重试成功清除错误", () => assert.equal(a.store.sync.info().error, 
 const setCount = remote.calls.filter((x) => x === "set").length;
 await a.store.sync.now();
 check("无变更时不重复写同步存储", () => assert.equal(remote.calls.filter((x) => x === "set").length, setCount));
+// 真实 Chromium 存储会重排对象字段；JSON 字符串不同不代表记录变化。
+const reorder = value => JSON.parse(JSON.stringify(value, (_, item) => item && typeof item === "object" && !Array.isArray(item)
+  ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item));
+remote.data = reorder(remote.data);
+const unchangedWrites = remote.calls.filter(method => method === "set").length;
+const reordered = await a.store.sync.now();
+check("存储字段重排不造成重复推送与虚假拉取", () => assert.ok(reordered.pushed === 0 && reordered.pulled === 0 && remote.calls.filter(method => method === "set").length === unchangedWrites));
 remote.delay = 30;
 const x = a.store.sync.now(), y = a.store.sync.now();
 check("重复点击同步合并为同一个任务", () => assert.equal(x, y));
@@ -132,6 +139,11 @@ check("关闭同步不会删除远端数据", () => assert.ok(remote.data["acc:"
 const base = { ...payload(), id: "tie", createdAt: 10, updatedAt: 20 };
 const left = { accounts: [{ ...base, note: "a" }] }, right = { accounts: [{ ...base, note: "b" }] };
 check("同时编辑时冲突结果确定且收敛", () => assert.equal(JSON.stringify(a.model.merge(left, right)), JSON.stringify(a.model.merge(right, left))));
+check("仅一端字段重排也不改变同时间戳冲突的胜出记录", () => assert.ok(
+  a.model.equal(a.model.merge(left, right), a.model.merge(left, reorder(right))) &&
+  a.model.equal(a.model.merge(left, right), a.model.merge(reorder(left), right))));
+check("账号数组的记录顺序仍有意义", () => assert.equal(a.model.equal([base, { ...base, id: "other" }], [{ ...base, id: "other" }, base]), false));
+check("新增字段与缺失字段仍可区分", () => assert.equal(a.model.equal(base, { ...base, note: "changed" }), false));
 const sameLocal = backend();
 const tab1 = device(backend(), sameLocal), tab2 = device(backend(), sameLocal);
 await tab1.store.init(); await tab2.store.init();

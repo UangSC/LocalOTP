@@ -2,11 +2,23 @@
 (function (global) {
   "use strict";
   const OTP = global.OTP;
-  const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // Chromium 的存储往返可能重排对象字段；字段顺序不是账号内容的一部分。
+  function equal(a, b) {
+    if (a === b) return true;
+    if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    if (Array.isArray(a) && a.length !== b.length) return false;
+    const keys = Object.keys(a);
+    return keys.length === Object.keys(b).length && keys.every(key =>
+      Object.prototype.hasOwnProperty.call(b, key) && equal(a[key], b[key]));
+  }
+  const canonical = value => JSON.stringify(value, (_, item) =>
+    item && typeof item === "object" && !Array.isArray(item)
+      ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
   const stamp = (record) => Number(record?.updatedAt || record?.createdAt) || 0;
   const validTime = (value) => Number.isFinite(Number(value)) && Number(value) > 0;
   const newer = (a, b) => !a || stamp(b) > stamp(a) ||
-    (stamp(a) === stamp(b) && JSON.stringify(b) > JSON.stringify(a)) ? b : a;
+    (stamp(a) === stamp(b) && canonical(b) > canonical(a)) ? b : a;
   function tombs(a = {}, b = {}) {
     const result = Object.create(null);
     for (const map of [a, b]) for (const [id, time] of Object.entries(map)) {
@@ -38,7 +50,7 @@
       if (key.startsWith("acc:")) {
         const account = normalize(value);
         if (!account || account.id !== key.slice(4) || !OTP.totp.validateSecret(account.secret).ok) {
-          throw new Error("云端账号格式无效，已停止写入，请检查备份");
+          throw new Error("同步缓存账号格式无效，已停止写入，请检查备份");
         }
         data.accounts.push(account);
       } else if (key.startsWith("cat:") && value?.id === key.slice(4) && typeof value.name === "string") {
@@ -64,6 +76,14 @@
   const ownedKey = (key) => /^(acc:|cat:|tomb:|ctomb:)/.test(key) || key === "categories";
   const byteSize = (key, value) => new TextEncoder().encode(key + JSON.stringify(value)).length;
   OTP.syncModel = { merge, equal, stamp, decode, encode, ownedKey };
+  // storage.sync 只有本机缓存操作的回执，不能用它确认云端上传或另一台收件。
+  OTP.syncFeedback = function (result) {
+    if (!result?.ok) return { text: result?.error || "缓存合并失败", kind: "bad" };
+    if (result.remoteAccounts === 0 && result.localAccounts === 0) {
+      return { text: "本机同步缓存为空，尚未收到账号；两端 ID 一致时，请检查浏览器的 Extension Settings 同步状态", kind: "warn" };
+    }
+    return { text: `本机缓存合并完成 · 合入 ${result.pulled} 条，写入缓存 ${result.pushed} 条；未确认云端传输`, kind: "warn" };
+  };
 
   OTP.createSync = function ({ state, area, call, persist, emit, normalize, withLock, readData, writeData, adopt }) {
     let pending = null;
@@ -72,7 +92,7 @@
     const isPage = typeof document !== "undefined";
     const useWorker = isPage && !!global.chrome?.runtime?.id;
     const info = () => ({ available: !!area, enabled: !!state.settings.syncEnabled,
-      lastSyncAt: state.settings.lastSyncAt || 0, ...status });
+      lastSyncAt: state.settings.lastSyncAt || 0, ...status, cloudStatus: "unverified" });
     function report(patch) {
       status = { ...status, ...patch };
       emit("sync:status");
@@ -124,7 +144,8 @@
         const pushed = Object.keys(push).filter((k) => k.startsWith("acc:")).length;
         const deleted = before.accounts.filter((a) => !merged.accounts.some((b) => a.id === b.id)).length;
         if (!equal(before, { accounts: state.accounts, categories: state.categories })) emit("sync:data");
-        return { ok: true, pulled, pushed, deleted, remoteAccounts: remoteData.accounts.length, localAccounts: merged.accounts.length };
+        return { ok: true, pulled, pushed, deleted, remoteAccounts: remoteData.accounts.length,
+          localAccounts: merged.accounts.length, scope: "browser-cache", cloudStatus: "unverified" };
       });
     }
     function now() {
@@ -173,7 +194,9 @@
       try {
         const remote = await call(area, "get", null) || {};
         const keys = Object.keys(remote);
-        return { ok: true, extensionId: global.chrome?.runtime?.id || "", enabled: !!state.settings.syncEnabled,
+        return { ok: true, extensionId: global.chrome?.runtime?.id || "",
+          extensionVersion: global.chrome?.runtime?.getManifest?.().version || "",
+          enabled: !!state.settings.syncEnabled, scope: "browser-cache", cloudStatus: "unverified",
           localAccounts: state.accounts.length, cachedAccounts: keys.filter(key => key.startsWith("acc:")).length,
           cachedCategories: keys.filter(key => key.startsWith("cat:")).length,
           cachedDeletions: keys.filter(key => key.startsWith("tomb:")).length, lastMergeAt: state.settings.lastSyncAt || 0 };

@@ -125,6 +125,9 @@ loadModule(sandbox, "util.js");
 loadModule(sandbox, "totp.js");
 loadModule(sandbox, "seed.js");
 loadModule(sandbox, "sync.js");
+loadModule(sandbox, "store/security.js");
+loadModule(sandbox, "store/search.js");
+loadModule(sandbox, "store/import.js");
 loadModule(sandbox, "store.js");
 
 const OTP = sandbox.OTP;
@@ -312,7 +315,7 @@ const byEmail = OTP.store.search("solo.marker@");
 check("邮箱命中数", byEmail.hits.length, 1);
 check("命中区间", byEmail.hits[0].ranges.email[0], [0, 12]);
 
-const byIssuer = OTP.store.search("NOTION");
+const byIssuer = OTP.store.search("DEMO NOTES");
 checkTrue("服务名大小写不敏感", byIssuer.hits.length >= 1);
 checkTrue("命中落在服务名区间", byIssuer.hits[0].ranges.issuer.length > 0);
 
