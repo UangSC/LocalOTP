@@ -5,11 +5,11 @@ import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
+import { checkVersions } from "./version.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = name => readFileSync(resolve(root, name), "utf8");
-const manifest = JSON.parse(read("manifest.json")), pkg = JSON.parse(read("package.json"));
-assert.equal(manifest.version, pkg.version, "版本号不一致");
-assert.match(manifest.version, /^\d+\.\d+\.\d+$/, "使用三位数字版本");
+const manifest = JSON.parse(read("manifest.json"));
+checkVersions(root);
 const id = createHash("sha256").update(Buffer.from(manifest.key, "base64")).digest("hex").slice(0, 32)
   .replace(/[0-9a-f]/g, value => String.fromCharCode(97 + parseInt(value, 16)));
 assert.equal(id, "mjpifhendkddjgmoheglnfciammaipji", "固定扩展公钥被改变");

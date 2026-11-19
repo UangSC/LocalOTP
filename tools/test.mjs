@@ -7,7 +7,7 @@ const suites = [
   ["tools/check-project.mjs"],
   ["tools/selftest.mjs"],
   ["tools/sync-test.mjs"],
-  ["--test", "tools/access-test.mjs", "tools/access-client-test.mjs", "tools/otp-core-test.mjs"],
+  ["--test", "tools/access-test.mjs", "tools/access-client-test.mjs", "tools/otp-core-test.mjs", "tools/version-test.mjs"],
   ["tools/extension-test.mjs"],
   ["tools/sync-isolation-test.mjs"],
   ["tools/fixed-id-test.mjs"],

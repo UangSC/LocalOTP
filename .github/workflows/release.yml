@@ -1,0 +1,101 @@
+name: 发布一致版本
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布已有版本标签，例如 v1.0.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-localotp
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: 检查标签格式
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo '发布标签必须为 v主版本.次版本.修订号'
+            exit 1
+          fi
+
+      - name: 检出对应标签
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 拒绝覆盖和版本倒退
+        env:
+          RELEASE_LIST: ${{ runner.temp }}/localotp-releases.json
+        run: |
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases" > "$RELEASE_LIST"
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          pages = json.loads(Path(os.environ['RELEASE_LIST']).read_text())
+          releases = [release for page in pages for release in page]
+          tag = os.environ['RELEASE_TAG']
+          current = tuple(map(int, tag[1:].split('.')))
+          legacy_tags = {'v1.6.0', 'v1.6.1', 'v0.9.0'}
+          for release in releases:
+              previous = release['tag_name']
+              if previous == tag:
+                  raise SystemExit('该标签已有 Release；不能覆盖已发布附件')
+              if release['draft'] or release['prerelease'] or previous in legacy_tags:
+                  continue
+              if re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', previous):
+                  if tuple(map(int, previous[1:].split('.'))) >= current:
+                      raise SystemExit('当前正式版本必须高于已有正式发布，拒绝 latest 倒退')
+          PY
+
+      - name: 检查项目
+        run: npm run check
+
+      - name: 检查版本与标签
+        run: npm run release:check -- --check-tag "$RELEASE_TAG"
+
+      - name: 验证打包守卫
+        run: python tools/package-test.py
+
+      - name: 验证版本守卫
+        run: node --test tools/version-test.mjs
+
+      - name: 打包并校验
+        run: |
+          python tools/package.py
+          python tools/package.py --verify-only "dist/LocalOTP-${RELEASE_TAG#v}.zip"
+          test -f "docs/releases/${RELEASE_TAG#v}.md"
+
+      - name: 上传附件后发布
+        run: |
+          gh release create "$RELEASE_TAG" \
+            "dist/LocalOTP-${RELEASE_TAG#v}.zip" \
+            "dist/LocalOTP-${RELEASE_TAG#v}.zip.sha256" \
+            --verify-tag --draft \
+            --title "LocalOTP ${RELEASE_TAG#v}" \
+            --notes-file "docs/releases/${RELEASE_TAG#v}.md"
+          gh release edit "$RELEASE_TAG" --draft=false --latest

@@ -17,7 +17,7 @@
 
 ## 安装与升级
 
-1. 从 [GitHub Releases](https://github.com/UangSC/LocalOTP/releases/latest) 下载 ZIP 并解压。
+1. 从 [当前正式发布](https://github.com/UangSC/LocalOTP/releases/latest) 下载 [LocalOTP-1.0.0.zip](https://github.com/UangSC/LocalOTP/releases/download/v1.0.0/LocalOTP-1.0.0.zip) 并解压；插件版本以包内 `manifest.json` 为准。
 2. 在 `edge://extensions/` 或 `chrome://extensions/` 开启开发者模式，选择“加载解压缩的扩展”，指定直接包含 `manifest.json` 的文件夹。
 3. 在插件的同步诊断中核对运行时 ID。固定 ID 为：
 
@@ -29,7 +29,7 @@ mjpifhendkddjgmoheglnfciammaipji
 
 **从旧的无 key 版本迁移：**先保留旧插件并导出账号，再在固定 ID 新版中导入。旧 ID 的数据不会自动进入新 ID，确认完整后再整理旧副本。已使用固定 ID 的安装通常可替换原目录文件后点击“重新加载”。
 
-**从 1.6.x 降到 0.9.0：**这是预发布版本编号整理，不是数据格式回退。浏览器按数字比较版本，自动更新不会把 0.9.0 视为 1.6.x 的升级；解压加载版需手动更新文件并重新加载。操作前保留备份，核对 ID；不要为了降版本先卸载有数据的插件。
+**从旧编号版本更新到当前正式版：**历史开发曾使用 `1.6.x`，随后重整为 `0.9.x`、`0.10.x`，正式发布从 `1.0.0` 开始。旧提交、标签和下载包保留其真实历史版本，并标明历史编号。浏览器按数字比较版本，不会自动把 `1.0.0` 当成 `1.6.x` 的升级；解压加载版需手动替换原目录文件，再点击“重新加载”。操作前保留备份并核对固定 ID，不要先卸载有数据的插件。账号数据格式仍为 v2，与产品发布版本独立。
 
 ## 功能
 
@@ -77,10 +77,13 @@ mjpifhendkddjgmoheglnfciammaipji
 npm run preview
 npm test
 npm run check
+python tools/package-test.py
 python tools/package.py
 ```
 
-正式打包产物为 `dist/LocalOTP-1.0.0.zip`，包含运行文件、README 风险告知和使用说明，发布文件统一使用 `LocalOTP-版本号.zip` 命名。`artifacts/`、`dist/`、浏览器测试缓存及用户备份不提交到 Git。
+正式打包产物为 `dist/LocalOTP-1.0.0.zip` 及配套 `.sha256`，包含运行文件、README 风险告知和使用说明，发布文件统一使用 `LocalOTP-版本号.zip` 命名。打包前会核对源码、网页预览、文档声明与包名，打包后核对包内版本、文件内容和校验和。旧本地产物归档到 `dist/archive/`。`artifacts/`、`dist/`、浏览器测试缓存及用户备份不提交到 Git。
+
+版本唯一来源为 `manifest.json`；`npm run version:set -- 1.0.1` 修改版本并同步关联声明，`npm run version:sync` 重新生成当前声明。推送与当前提交一致的 `v版本号` 标签后，GitHub Actions 自动创建正式下载包并显式设为 latest；只推送 `main` 不会更新 Release。流程和历史编号见 [发布与版本维护](docs/release-guide.md)。
 
 | 目录 | 职责 |
 | --- | --- |
@@ -99,4 +102,4 @@ python tools/package.py
 
 Windows Edge 有自动化覆盖。用户已反馈 Windows 与 macOS Edge 在完成旧 ID 迁移后能收到账号；这不等于所有平台和离线冲突场景都经过独立验收。Mac 的 Command 快捷键和平台分支已覆盖，Safari 不在本包范围内。
 
-三位版本号采用 `主版本.次版本.修订号`：通常对应不兼容改动、兼容的新功能、兼容的问题修复。`0.x.y` 表示尚在 1.0 之前迭代，接口和行为可能继续调整；发布版本与 `manifest.json`、`package.json` 保持一致。
+三位版本号采用 `主版本.次版本.修订号`：通常对应不兼容改动、兼容的新功能、兼容的问题修复。当前正式版本从 `1.0.0` 起递增；历史编号不重新命名。产品版本、发布标签、下载文件名及包内版本必须一致，账号数据格式和第三方库各自保留独立版本。

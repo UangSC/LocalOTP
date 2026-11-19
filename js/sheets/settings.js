@@ -273,7 +273,7 @@
     body.append(
       el("p", {
         class: "sheet-footnote",
-        text: `LocalOTP ${global.chrome?.runtime?.getManifest?.().version || "1.0.0"} · 本地存储 / 可选浏览器同步`,
+        text: `LocalOTP ${OTP.version} · 本地存储 / 可选浏览器同步`,
       })
     );
 
