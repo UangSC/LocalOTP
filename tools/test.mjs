@@ -17,6 +17,7 @@ const suites = [
   ["tools/window-browser-test.mjs"],
   ["tools/otp-browser-test.mjs"],
   ["tools/qa.mjs"],
+  ["tools/category-icons-test.mjs"],
   ["tools/scan-access-browser-test.mjs"],
   ["tools/scan-capture-browser-test.mjs"],
   ["tools/ui-polish-test.mjs"],

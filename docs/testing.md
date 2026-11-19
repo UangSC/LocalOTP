@@ -9,6 +9,7 @@
 | `check-project.mjs` | manifest、package、README、生成的网页版本一致，页面加载顺序、公钥、资源、文档与常见凭据模式；`--history` 追加已有历史文本扫描 |
 | `package-test.py` | 错误包名、内容/版本/校验和篡改被拒绝，以及重复打包字节一致 |
 | `version-test.mjs` | 版本同步、预览/运行时来源、过期声明、版本降级、标签与干净工作区守卫 |
+| `category-icons-test.mjs` | 平台分类图标选择、编辑、持久化、导出、深浅主题、窄窗口边界、SVG 离线显示及返回设置 |
 | `selftest.mjs` | RFC 标准向量、Base32、导入、备份、检索和密码摘要 |
 | `sync-test.mjs` | 合并、冲突、字段重排、删除传播、配额、错误恢复、多页面持久化 |
 | `access-test.mjs`、`access-client-test.mjs` | 调用者、proof、票据过期/重放、会话撤销、错误传播 |

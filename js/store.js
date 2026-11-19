@@ -339,6 +339,9 @@
   const CATEGORY_ICONS = [
     "briefcase", "gamepad", "cart", "code", "cloud", "bank",
     "mail", "tag", "star", "users", "folder", "shield",
+    "brand-google", "brand-chatgpt", "brand-github", "brand-microsoft",
+    "brand-apple", "brand-youtube", "brand-discord", "brand-telegram",
+    "brand-x", "brand-amazon", "brand-facebook", "brand-instagram",
   ];
 
   function categories() {

@@ -17,6 +17,7 @@
     users: "团队",
     folder: "文件夹",
     shield: "安全",
+    ...OTP.brandIconLabels,
   };
 
   function openCategoryManager() {
@@ -82,7 +83,7 @@
       class: "btn btn-ghost",
       type: "button",
       text: "返回",
-      onclick: () => OTP.sheets.openManage(manageTab),
+      onclick: () => OTP.sheets.openManage("settings"),
     });
 
     ui.openSheet({
@@ -105,30 +106,38 @@
     });
     const nameField = field("分类名称", nameInput, { required: true });
 
-    const grid = el("div", { class: "icon-grid", role: "group", "aria-label": "分类图标" });
     const buttons = [];
-
-    for (const key of store.CATEGORY_ICONS) {
-      const btn = el("button", {
-        class: "icon-option" + (key === selected ? " is-on" : ""),
-        type: "button",
-        "aria-label": ICON_LABELS[key] || key,
-        "aria-pressed": String(key === selected),
-        "data-tip": ICON_LABELS[key] || key,
-        html: icon(key, 20),
-        onclick: () => {
-          selected = key;
-          for (const other of buttons) {
-            other.classList.toggle("is-on", other === btn);
-            other.setAttribute("aria-pressed", String(other === btn));
-          }
-        },
-      });
-      buttons.push(btn);
-      grid.append(btn);
+    function makeIconGrid(keys, label) {
+      const grid = el("div", { class: "icon-grid", role: "group", "aria-label": label });
+      for (const key of keys) {
+        const btn = el("button", {
+          class: "icon-option" + (key === selected ? " is-on" : ""),
+          type: "button",
+          "aria-label": ICON_LABELS[key] || key,
+          "aria-pressed": String(key === selected),
+          "data-tip": ICON_LABELS[key] || key,
+          "data-icon": key,
+          title: ICON_LABELS[key] || key,
+          html: icon(key, 20),
+          onclick: () => {
+            selected = key;
+            for (const other of buttons) {
+              other.classList.toggle("is-on", other === btn);
+              other.setAttribute("aria-pressed", String(other === btn));
+            }
+          },
+        });
+        buttons.push(btn);
+        grid.append(btn);
+      }
+      return grid;
     }
 
-    const body = el("div", { class: "form" }, nameField.node, el("div", { class: "field-label", text: "图标" }), grid);
+    const generalIcons = store.CATEGORY_ICONS.filter(key => !OTP.brandIconLabels[key]);
+    const platformIcons = store.CATEGORY_ICONS.filter(key => OTP.brandIconLabels[key]);
+    const body = el("div", { class: "form" }, nameField.node,
+      el("div", { class: "field-label", text: "通用图标" }), makeIconGrid(generalIcons, "通用分类图标"),
+      el("div", { class: "field-label", text: "常见平台" }), makeIconGrid(platformIcons, "常见平台图标"));
 
     const save = el("button", {
       class: "btn btn-primary",
