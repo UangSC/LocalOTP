@@ -83,27 +83,46 @@
   /* ── 状态 ─────────────────────────────────────────────────────────────── */
 
   const DEFAULTS = {
-    theme: "auto",
-    colorScheme: "blue",
+    theme: "light",
+    colorScheme: "ocean",
     view: "list",
     sort: "recent",
     lockAfter: 15,
     rememberMinutes: 15,
     passwordRequired: true,
     accessPolicyVersion: 1,
+    defaultCategoriesSeeded: false,
     syncEnabled: false,
     lastSyncAt: 0,
     lastBackupAt: 0,
   };
 
   const COLOR_SCHEMES = [
-    { id: "purple", label: "经典紫", description: "鸢尾紫与柔雾灰" },
-    { id: "green", label: "清新绿", description: "薄荷绿与暖白" },
-    { id: "blue", label: "天空蓝", description: "CPAMP 蓝与通透白" },
-    { id: "pink", label: "少女粉", description: "玫瑰粉与奶油白" },
-    { id: "mono", label: "黑白", description: "浅色黑主调 · 深色白主调" },
+    { id: "ocean", mode: "light", pair: "midnight", label: "晨曦蓝青", description: "钴蓝与湖青双色渐变" },
+    { id: "aurora", mode: "light", pair: "nebula", label: "极光紫樱", description: "靛紫与樱粉双色渐变" },
+    { id: "sunset", mode: "light", pair: "ember", label: "暖阳珊瑚", description: "玫红与暖橙双色渐变" },
+    { id: "midnight", mode: "dark", pair: "ocean", label: "深海极光", description: "冰蓝与翠青双色渐变" },
+    { id: "nebula", mode: "dark", pair: "aurora", label: "星云暮紫", description: "星紫与玫粉双色渐变" },
+    { id: "ember", mode: "dark", pair: "sunset", label: "暮焰流金", description: "流金与珊瑚双色渐变" },
   ];
-  const normalizeColor = (value) => COLOR_SCHEMES.some(item => item.id === value) ? value : "blue";
+  const LEGACY_COLOR_MAP = {
+    blue: "ocean",
+    green: "ocean",
+    purple: "aurora",
+    pink: "sunset",
+    mono: "ocean",
+  };
+  const normalizeColor = (value) => {
+    if (COLOR_SCHEMES.some(item => item.id === value)) return value;
+    if (Object.prototype.hasOwnProperty.call(LEGACY_COLOR_MAP, value)) return LEGACY_COLOR_MAP[value];
+    return "ocean";
+  };
+  const pairColorForTheme = (colorId, resolvedTheme) => {
+    const scheme = COLOR_SCHEMES.find(item => item.id === normalizeColor(colorId)) || COLOR_SCHEMES[0];
+    if (resolvedTheme === "dark" && scheme.mode === "light") return scheme.pair;
+    if (resolvedTheme === "light" && scheme.mode === "dark") return scheme.pair;
+    return scheme.id;
+  };
   const normalizeRemember = value => [1, 5, 15].includes(value) ? value : 0;
 
   const state = {
@@ -242,18 +261,32 @@
       state.categoryTombstones = data.categoryTombstones || {};
     } else {
       state.accounts = areaLocal ? [] : OTP.seed.accounts();
-      state.categories = areaLocal ? [] : OTP.seed.categories();
-      state.settings = { ...DEFAULTS };
+      state.categories = areaLocal ? OTP.seed.defaultCategories() : OTP.seed.categories();
+      state.settings = { ...DEFAULTS, defaultCategoriesSeeded: true };
       await persist(true);
     }
 
     state.security = sec && sec.hash ? sec : null;
+    let needsMigration = false;
     // 将旧版的默认关闭升级为 15 分钟；之后显式选择关闭仍会保留。
     if (data && !data.settings?.accessPolicyVersion) {
-      dirtySettings = { accessPolicyVersion: 1, rememberMinutes: state.settings.rememberMinutes || 15 };
+      dirtySettings = { ...dirtySettings, accessPolicyVersion: 1, rememberMinutes: state.settings.rememberMinutes || 15 };
       Object.assign(state.settings, dirtySettings);
-      await persist();
+      needsMigration = true;
     }
+    // 一次性补齐默认平台分类（Google、GitHub、ChatGPT、Microsoft），后续允许自由编辑与删除。
+    if (data && !data.settings?.defaultCategoriesSeeded) {
+      const existingIds = new Set(state.categories.map((c) => c.id));
+      const existingNames = new Set(state.categories.map((c) => String(c.name || "").trim().toLowerCase()));
+      for (const def of OTP.seed.defaultCategories()) {
+        if (existingIds.has(def.id) || existingNames.has(def.name.toLowerCase()) || state.categoryTombstones[def.id]) continue;
+        state.categories.push(def);
+      }
+      dirtySettings = { ...dirtySettings, defaultCategoriesSeeded: true };
+      state.settings.defaultCategoriesSeeded = true;
+      needsMigration = true;
+    }
+    if (needsMigration) await persist();
     state.ready = true;
     mirrorTheme(state.settings.theme);
     bindStorage();
@@ -498,6 +531,7 @@
     deleteCategory,
     CATEGORY_ICONS,
     COLOR_SCHEMES,
+    pairColorForTheme,
     settings,
     patchSettings,
     setPassword,

@@ -262,6 +262,9 @@
       });
 
       clear(refs.dialog);
+      refs.dialog.className = "dialog";
+      refs.dialog.setAttribute("role", "alertdialog");
+      refs.dialog.removeAttribute("aria-label");
       refs.dialog.append(
         el("div", {
           class: o.danger ? "dialog-icon is-danger" : "dialog-icon",
@@ -283,6 +286,35 @@
     });
   }
 
+  function openModal(opts) {
+    OTP.ui.closeSelect?.();
+    const o = opts || {};
+    if (refs.dialogOpen) resolveDialog(false);
+    refs.dialogFocus = document.activeElement;
+    refs.dialogOnClose = o.onClose || null;
+
+    clear(refs.dialog);
+    refs.dialog.className = "dialog" + (o.className ? " " + o.className : "");
+    refs.dialog.setAttribute("role", "dialog");
+    if (o.ariaLabel) refs.dialog.setAttribute("aria-label", o.ariaLabel);
+    else refs.dialog.removeAttribute("aria-label");
+    if (o.content) OTP.appendAll(refs.dialog, [o.content]);
+
+    refs.dialogOpen = true;
+    refs.dialogVeil.classList.add("is-on");
+    refs.dialog.classList.add("is-open");
+    refs.dialog.setAttribute("aria-hidden", "false");
+    installFocusTrap(refs.dialog);
+    requestAnimationFrame(() => {
+      const target = o.initialFocus || refs.dialog.querySelector(FOCUSABLE);
+      if (target && target.focus) target.focus({ preventScroll: true });
+    });
+  }
+
+  function closeModal() {
+    resolveDialog(false);
+  }
+
   function resolveDialog(value) {
     if (!refs.dialogOpen) return;
     refs.dialogOpen = false;
@@ -296,6 +328,10 @@
     refs.dialogResolve = null;
     if (resolve) resolve(value);
 
+    const onClose = refs.dialogOnClose;
+    refs.dialogOnClose = null;
+    if (onClose) onClose();
+
     if (refs.dialogFocus && refs.dialogFocus.focus) {
       try {
         refs.dialogFocus.focus({ preventScroll: true });
@@ -303,6 +339,7 @@
         /* noop */
       }
     }
+    refs.dialogFocus = null;
   }
 
   /* ── 菜单 ─────────────────────────────────────────────────────────────── */
@@ -460,6 +497,8 @@
     updateSheet,
     isSheetOpen,
     confirm,
+    openModal,
+    closeModal,
     openMenu,
     closeMenu,
     toast,

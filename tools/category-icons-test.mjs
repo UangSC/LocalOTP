@@ -34,7 +34,7 @@ async function unlock() {
   throw new Error("测试页面未解锁");
 }
 async function manager() {
-  await evaluate(cdp, "OTP.sheets.openCategoryManager()"); await sleep(220);
+  await evaluate(cdp, "OTP.sheets.openCategoryManager()"); await sleep(340);
 }
 async function addEditor() {
   await manager(); await click(".sheet-foot .btn-primary");

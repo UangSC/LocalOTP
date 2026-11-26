@@ -99,10 +99,11 @@ try {
     await until(floating, 'documentPictureInPicture.window.document.querySelector("iframe").contentDocument.querySelector("#quick-generator").dataset.otpStatus==="ready"');
     check('画中画内的临时验证码实际计算成功', await evaluate(floating, '/^[0-9]{3} [0-9]{3}$/.test(documentPictureInPicture.window.document.querySelector("iframe").contentDocument.querySelector(".otp-value").textContent)'));
     check('置顶时原小窗不可交互', await evaluate(floating, 'document.querySelector("#app").inert && document.body.dataset.pipOwner==="1"'));
+    check('置顶时历史独立小窗自动隐藏最小化', await evaluate(floating, '(async()=>{for(let i=0;i<25;i++){const w=await chrome.windows.getCurrent();if(w.state==="minimized")return true;await new Promise(r=>setTimeout(r,40));}return false;})()'));
     await shot(floating, 'pip-owner');
     await evaluate(floating, 'documentPictureInPicture.window.close()');
     await until(floating, '!document.body.dataset.pipOwner');
-    check('取消置顶回到原小窗', await evaluate(floating, '!document.querySelector("#app").inert'));
+    check('取消置顶回到原小窗并恢复窗口', await evaluate(floating, '(async()=>{const w=await chrome.windows.getCurrent();return !document.querySelector("#app").inert && w.state==="normal";})()'));
   }
   await click(floating, '#lock-btn'); await until(floating, '!!document.querySelector(".lock")');
   await until(page, '!!document.querySelector(".lock")');

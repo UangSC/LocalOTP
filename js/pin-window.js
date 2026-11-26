@@ -45,13 +45,31 @@
         const app = document.getElementById("app");
         app.inert = true;
         document.body.dataset.pipOwner = "1";
+        let ownerWindowId = null;
         const cover = OTP.el("div", { class: "pip-cover", role: "status" },
           OTP.el("span", { class: "pip-cover-icon", html: OTP.icon("pin", 26) }),
           OTP.el("h1", { text: "小窗已置顶" }),
-          OTP.el("p", { text: "验证码正在画中画窗口中显示。关闭此窗口也会结束置顶。" }),
+          OTP.el("p", { text: "验证码正在画中画窗口中显示。取消置顶或关闭置顶窗即可恢复本窗口。" }),
           OTP.el("button", { class: "btn btn-primary", type: "button", text: "返回独立小窗", onclick: () => pip.close() }));
         document.body.append(cover); cover.querySelector("button").focus();
-        pip.addEventListener("pagehide", () => { cover.remove(); app.inert = false; delete document.body.dataset.pipOwner; button.focus(); }, { once: true });
+        if (global.chrome?.windows?.getCurrent && global.chrome?.windows?.update) {
+          try {
+            const win = await global.chrome.windows.getCurrent();
+            if (win?.id != null) {
+              ownerWindowId = win.id;
+              await global.chrome.windows.update(ownerWindowId, { state: "minimized" });
+            }
+          } catch (_) { ownerWindowId = null; }
+        }
+        pip.addEventListener("pagehide", async () => {
+          cover.remove();
+          app.inert = false;
+          delete document.body.dataset.pipOwner;
+          if (ownerWindowId != null && global.chrome?.windows?.update) {
+            try { await global.chrome.windows.update(ownerWindowId, { state: "normal", focused: true }); } catch (_) {}
+          }
+          button.focus();
+        }, { once: true });
       } catch (_) { pip?.close(); OTP.ui.toast("浏览器未能打开置顶窗口，独立小窗仍可继续使用", "bad"); }
       finally { busy = false; button.disabled = false; }
     });

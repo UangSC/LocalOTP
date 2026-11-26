@@ -7,12 +7,15 @@
 (function () {
   "use strict";
 
-  let pref = "auto";
-  let colorScheme = "blue";
+  const VALID_SCHEMES = ["ocean", "aurora", "sunset", "midnight", "nebula", "ember"];
+  const LEGACY_MAP = { blue: "ocean", green: "ocean", purple: "aurora", pink: "sunset", mono: "ocean" };
+  let pref = "light";
+  let colorScheme = "ocean";
   try {
-    pref = localStorage.getItem("localotp:theme-preference") || localStorage.getItem("localotp:theme") || "auto";
+    pref = localStorage.getItem("localotp:theme-preference") || localStorage.getItem("localotp:theme") || "light";
     const savedColor = localStorage.getItem("localotp:color-scheme");
-    if (["purple", "green", "blue", "pink", "mono"].includes(savedColor)) colorScheme = savedColor;
+    if (VALID_SCHEMES.includes(savedColor)) colorScheme = savedColor;
+    else if (savedColor && LEGACY_MAP[savedColor]) colorScheme = LEGACY_MAP[savedColor];
   } catch (err) {
     /* 隐私模式等场景下取不到，按 auto 处理 */
   }

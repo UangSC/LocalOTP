@@ -150,6 +150,11 @@
     copyCode,
     copyField,
     toggleFocus,
+    showQr: (account) => {
+      if (runtime.lockNode || runtime.transitioning) return;
+      runtime.lastActivity = Date.now();
+      OTP.qrExport?.open(account);
+    },
     edit: (account) => OTP.sheets.openEditor(account),
     add: () => OTP.sheets.openEditor(null),
     import: () => OTP.sheets.openImport(),
@@ -158,7 +163,7 @@
       const ok = await ui.confirm({
         title: "删除这个账号？",
         message:
-          `<b>${escapeHtml(account.email)}</b> 将被永久移除。` +
+          `<b>${escapeHtml(account.email || account.issuer || "未命名 OTP")}</b> 将被永久移除。` +
           (syncOn ? "同步已开启，删除会传播到其他设备。" : "此操作不可撤销。"),
         confirmText: "删除",
         danger: true,
@@ -174,11 +179,12 @@
       ui.openMenu({
         x: event.clientX - box.left,
         y: event.clientY - box.top,
-        header: account.email,
+        header: account.email || account.issuer || "未命名 OTP",
         items: [
           { label: "复制验证码", icon: "shield", key: "↵", onSelect: () => copyCode(account, node, null) },
           ...(account.email ? [{ label: "复制邮箱", icon: "mail", onSelect: () => copyField(account, "email") }] : []),
           ...(account.password ? [{ label: "复制密码", icon: "key", onSelect: () => copyField(account, "password") }] : []),
+          { label: "查看 OTP 二维码", icon: "qrcode", onSelect: () => rowActions.showQr(account) },
           { sep: true },
           { label: "编辑", icon: "edit", key: "E", onSelect: () => OTP.sheets.openEditor(account) },
           {

@@ -231,6 +231,44 @@
     };
   }
 
+  /**
+   * 构造标准 otpauth://totp/... 链接，便于导出为二维码导入到其他验证器。
+   */
+  function buildOtpauth(account) {
+    if (!account || typeof account !== "object") throw new Error("账号数据无效");
+    const check = validateSecret(account.secret);
+    if (!check.ok) throw new Error(check.error);
+
+    const issuer = String(account.issuer || "").trim();
+    const labelAccount = String(account.email || "").trim();
+    const safeIssuer = issuer.replace(/:/g, " ");
+    let label;
+    if (safeIssuer && labelAccount) {
+      label = encodeURIComponent(safeIssuer) + ":" + encodeURIComponent(labelAccount);
+    } else if (labelAccount) {
+      label = encodeURIComponent(labelAccount);
+    } else if (safeIssuer) {
+      label = encodeURIComponent(safeIssuer);
+    } else {
+      label = "LocalOTP";
+    }
+
+    const params = new URLSearchParams();
+    params.set("secret", check.normalized);
+    if (issuer) params.set("issuer", issuer);
+    const algorithm = Object.hasOwn(ALGO, account.algorithm) ? account.algorithm : "SHA1";
+    const digits = Number(account.digits) === 8 ? 8 : 6;
+    const period =
+      Number.isInteger(Number(account.period)) && Number(account.period) >= 1 && Number(account.period) <= 86400
+        ? Number(account.period)
+        : 30;
+    if (algorithm !== "SHA1") params.set("algorithm", algorithm);
+    if (digits !== 6) params.set("digits", String(digits));
+    if (period !== 30) params.set("period", String(period));
+
+    return `otpauth://totp/${label}?${params.toString()}`;
+  }
+
   OTP.totp = {
     base32Decode,
     validateSecret,
@@ -238,6 +276,7 @@
     generate,
     cycle,
     parseOtpauth,
+    buildOtpauth,
     hasSubtle,
     clearKeyCache: () => keyCache.clear(),
     ALGORITHMS: ["SHA1", "SHA256", "SHA512"],

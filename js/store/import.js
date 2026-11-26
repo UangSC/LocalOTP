@@ -9,6 +9,60 @@
     const identity = account => account.email ? "email:" + account.email.trim().toLowerCase()
       : "otp:" + [account.secret, account.algorithm || "SHA1", account.digits || 6, account.period || 30].join(":");
 
+    function parseOtpLine(rawLine, lineNo, seen, existing) {
+      let line = String(rawLine || "").trim();
+      if (!line) return null;
+
+      let parsed = null;
+      const standalone = totp.validateSecret(line);
+      if (standalone.ok) {
+        line = "otpauth://totp/?secret=" + standalone.normalized;
+      }
+
+      const otpIndex = line.toLowerCase().indexOf("otpauth://");
+      if (otpIndex >= 0) {
+        parsed = totp.parseOtpauth(line.slice(otpIndex).trim());
+        if (!parsed) return { line: lineNo, kind: "bad", reason: "otpauth 链接无法解析" };
+        if (parsed.error) return { line: lineNo, kind: "bad", reason: parsed.error };
+      } else if (/^https?:\/\//i.test(line) && OTP.otpInput?.readLocation) {
+        let loc;
+        try { loc = OTP.otpInput.readLocation(line); } catch (_) { return { line: lineNo, kind: "bad", reason: "链接格式无效" }; }
+        if (loc.error || !loc.raw) return { line: lineNo, kind: "bad", reason: "链接中没有可解析的 OTP 参数" };
+        const res = OTP.otpInput.parse(loc.raw, loc.options);
+        if (!res.account) return { line: lineNo, kind: "bad", reason: res.error || "链接中的 OTP 无效" };
+        parsed = res.account;
+      } else {
+        return null;
+      }
+
+      const email = parsed.email || parsed.account || "";
+      const key = identity({ ...parsed, email });
+      const dupOf = existing.get(key);
+      const row = {
+        line: lineNo,
+        kind: dupOf ? "dup" : "new",
+        email,
+        password: "",
+        secret: parsed.secret,
+        issuer: parsed.issuer || parsed.account || "",
+        note: "",
+        categoryId: "",
+        algorithm: parsed.algorithm,
+        digits: parsed.digits,
+        period: parsed.period,
+        reason: dupOf ? "与已有账号重复" : "",
+        dupOf: dupOf ? dupOf.id : null,
+        fromUri: true,
+      };
+      if (seen.has(key)) {
+        row.kind = "dup";
+        row.reason = "同一批次内重复";
+        row.dupOf = null;
+      }
+      seen.set(key, row);
+      return row;
+    }
+
     /**
      * 支持两种行：
      *   1) 邮箱----密码----密钥
@@ -25,50 +79,13 @@
       );
 
       lines.forEach((raw, index) => {
-        let line = raw.replace(/\s+$/, "");
+        const line = raw.replace(/\s+$/, "");
         const lineNo = index + 1;
         if (!line.trim()) return;
-        const standalone = totp.validateSecret(line.trim());
-        if (standalone.ok) line = "otpauth://totp/?secret=" + standalone.normalized;
 
-        // ---- otpauth:// ----
-        const otpIndex = line.toLowerCase().indexOf("otpauth://");
-        if (otpIndex >= 0) {
-          const parsed = totp.parseOtpauth(line.slice(otpIndex).trim());
-          if (!parsed) {
-            rows.push({ line: lineNo, kind: "bad", reason: "otpauth 链接无法解析" });
-            return;
-          }
-          if (parsed.error) {
-            rows.push({ line: lineNo, kind: "bad", reason: parsed.error });
-            return;
-          }
-          const email = parsed.email || parsed.account || "";
-          const key = identity({ ...parsed, email });
-          const dupOf = existing.get(key);
-          const row = {
-            line: lineNo,
-            kind: dupOf ? "dup" : "new",
-            email,
-            password: "",
-            secret: parsed.secret,
-            issuer: parsed.issuer || parsed.account || "",
-            note: "",
-            categoryId: "",
-            algorithm: parsed.algorithm,
-            digits: parsed.digits,
-            period: parsed.period,
-            reason: dupOf ? "与已有账号重复" : "",
-            dupOf: dupOf ? dupOf.id : null,
-            fromUri: true,
-          };
-          if (seen.has(key)) {
-            row.kind = "dup";
-            row.reason = "同一批次内重复";
-            row.dupOf = null;
-          }
-          seen.set(key, row);
-          rows.push(row);
+        const otpRow = parseOtpLine(line, lineNo, seen, existing);
+        if (otpRow) {
+          rows.push(otpRow);
           return;
         }
 
@@ -188,17 +205,22 @@
       const lines = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/);
       const rows = [];
       const seen = new Map();
-      const existing = new Map(state.accounts.map((a) => [a.email.trim().toLowerCase(), a]));
+      const existing = new Map(state.accounts.map((a) => [identity(a), a]));
 
       lines.forEach((raw, index) => {
         const line = raw.trim();
         if (!line) return;
+        const otpRow = parseOtpLine(line, index + 1, seen, existing);
+        if (otpRow) {
+          rows.push(otpRow);
+          return;
+        }
         const parts = splitQuick(line);
         if (!parts) {
           rows.push({
             line: index + 1,
             kind: "bad",
-            reason: "认不出分隔符：用 邮箱----密码----密钥，或 邮箱--密码--密钥",
+            reason: "认不出格式：支持 邮箱----密码----密钥、-- / Tab / | 分隔，或 otpauth:// 链接",
           });
           return;
         }

@@ -45,12 +45,12 @@ try{
   return {text:ratio(getComputedStyle(input).color,bg),placeholder:ratio(getComputedStyle(input,'::placeholder').color,bg)};
  })()`);
  const ratios=[];
- for(const theme of ['light','dark'])for(const color of ['blue','purple','green','pink','mono']){
+ for(const [theme,color] of [['light','ocean'],['light','aurora'],['light','sunset'],['dark','midnight'],['dark','nebula'],['dark','ember']]){
   const normal=await contrastCheck(theme,color),disabled=await contrastCheck(theme,color,true);ratios.push({theme,color,normal,disabled});
   check(`${theme}/${color} 切换瞬间输入与占位文字对比度合格`,normal.text>=4.5 && normal.placeholder>=4.5 && disabled.text>=4.5);
  }
  writeFileSync(resolve(shots,'input-contrast.json'),JSON.stringify(ratios,null,2));
- await contrastCheck('dark','blue');await sleep(300);await shot('picker-result-dark');
+ await contrastCheck('dark','midnight');await sleep(300);await shot('picker-result-dark');
 
  await click('.scan-again');await evaluate(page,"Object.defineProperty(navigator.mediaDevices,'getDisplayMedia',{configurable:true,value:async()=>{throw new DOMException('cancel','NotAllowedError')}})");await click('#scan-capture');await wait('!document.querySelector("#scan-capture").disabled');
  check('取消来源选择后按钮仍可再次操作',await evaluate(page,"document.querySelector('.scan-status').textContent.includes('已取消')"));

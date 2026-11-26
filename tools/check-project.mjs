@@ -64,7 +64,7 @@ const files = [...new Set(execFileSync("git", ["ls-files", "--cached", "--others
 for (const name of files) {
   const path = resolve(root, name);
   if (!existsSync(path) || !statSync(path).isFile()) continue;
-  assert.ok(!/^(?:dist|artifacts|node_modules)\//.test(name), "生成物被纳入版本控制：" + name);
+  assert.ok(!/^(?:dist|_site|artifacts|node_modules)\//.test(name), "生成物被纳入版本控制：" + name);
   assert.ok(!/(?:^|\/)\.env(?:\.|$)|\.(?:pem|key|pfx|p12|har|db|sqlite)$|localotp-backup-.*\.json$/i.test(name), "不应提交的文件：" + name);
   if (/\.(?:js|mjs|py|json|md|html|css|txt)$/.test(name)) scan(name, readFileSync(path, "utf8"));
 }

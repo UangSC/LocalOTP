@@ -123,6 +123,7 @@ const SECRET_SHA512 = base32Encode(
 const sandbox = makeSandbox();
 loadModule(sandbox, "util.js");
 loadModule(sandbox, "totp.js");
+loadModule(sandbox, "qr-encode.js");
 loadModule(sandbox, "seed.js");
 loadModule(sandbox, "sync.js");
 loadModule(sandbox, "store/security.js");
@@ -287,6 +288,18 @@ check("密码里含 -- 时用 ---- 保住", quick.rows[3].password, "Pa--ss");
 check("认不出分隔符时给出原因", quick.rows[4].kind, "bad");
 check("同批重复只标后出现的", quick.rows[5].reason, "同一批次内重复");
 
+const quickOtp = OTP.store.parseQuick(
+  [
+    "otpauth://totp/GitHub:alice.quick@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub&algorithm=SHA256&digits=8&period=60",
+    "otpauth://totp/Dup:alice.quick@example.com?secret=KRSXG5CTMVRXEZLU",
+    "otpauth://hotp/Bad:x?secret=JBSWY3DPEHPK3PXP",
+    "MFRGGZDFMZTWQ2LL",
+  ].join("\n")
+);
+check("快速添加支持 otpauth 链接与纯密钥", quickOtp.stats, { total: 4, fresh: 2, dup: 1, bad: 1 });
+check("快速添加解析 otpauth 参数", [quickOtp.rows[0].issuer, quickOtp.rows[0].email, quickOtp.rows[0].algorithm, quickOtp.rows[0].digits, quickOtp.rows[0].period], ["GitHub", "alice.quick@example.com", "SHA256", 8, 60]);
+check("快速添加识别纯 Base32 密钥", quickOtp.rows[3].secret, "MFRGGZDFMZTWQ2LL");
+
 /* ── 门禁摘要 ───────────────────────────────────────────────────────────── */
 
 section("管理密码摘要");
@@ -387,6 +400,24 @@ check("空邮箱备份按不同密钥区分", OTP.store.importPayload({accounts:
 ]}).added, 2);
 await OTP.store.persist(); await OTP.store.init();
 check("纯 OTP 持久化保留空邮箱与空密码", OTP.store.accounts().filter(a=>!a.email&&!a.password).length, 4);
+
+section("OTP 链接构建、离线 QR 编码与默认分类");
+const builtUri = totp.buildOtpauth({
+  email: "alice@example.com",
+  issuer: "GitHub",
+  secret: "JBSWY3DPEHPK3PXP",
+  algorithm: "SHA256",
+  digits: 8,
+  period: 60,
+});
+const roundTrip = totp.parseOtpauth(builtUri);
+check("buildOtpauth 往返 issuer 一致", roundTrip.issuer, "GitHub");
+check("buildOtpauth 往返 email 一致", roundTrip.email, "alice@example.com");
+check("buildOtpauth 往返 secret 一致", roundTrip.secret, "JBSWY3DPEHPK3PXP");
+check("buildOtpauth 往返 algorithm/digits/period 一致", [roundTrip.algorithm, roundTrip.digits, roundTrip.period], ["SHA256", 8, 60]);
+const qrMatrix = OTP.qrEncode.encodeMatrix(builtUri);
+checkTrue("离线 QR 矩阵为标准合法尺寸", Array.isArray(qrMatrix) && qrMatrix.length >= 21 && (qrMatrix.length - 17) % 4 === 0);
+check("默认平台分类齐全", OTP.seed.defaultCategories().map(c => c.name), ["Google", "GitHub", "ChatGPT", "Microsoft"]);
 
 /* ── 结果 ───────────────────────────────────────────────────────────────── */
 

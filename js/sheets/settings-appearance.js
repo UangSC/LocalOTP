@@ -18,50 +18,88 @@
         { id: "dark", label: "深色" },
       ],
       onChange: (id) => {
-        store.patchSettings({ theme: id });
+        const patch = { theme: id };
+        if (id === "light" || id === "dark") {
+          patch.colorScheme = store.pairColorForTheme(store.settings().colorScheme, id);
+        }
+        store.patchSettings(patch);
+        updateColors();
         if (global.OTP.app && OTP.app.applyTheme) OTP.app.applyTheme(true);
       },
     });
 
     const colorButtons = [];
-    const colorChoices = el("div", { class: "color-choices", role: "radiogroup", "aria-label": "界面色系" });
+    const lightChoices = el("div", { class: "color-choices", role: "group", "aria-label": "浅色双色渐变主题" });
+    const darkChoices = el("div", { class: "color-choices", role: "group", "aria-label": "深色双色渐变主题" });
+    const colorGroupWrap = el("div", { class: "color-groups", role: "radiogroup", "aria-label": "双色渐变主题" });
+
+    function activeSchemeId() {
+      const cur = store.settings();
+      if (cur.theme === "light" || cur.theme === "dark") {
+        return store.pairColorForTheme(cur.colorScheme, cur.theme);
+      }
+      const resolved = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return store.pairColorForTheme(cur.colorScheme, resolved);
+    }
+
     function updateColors() {
-      const current = store.settings().colorScheme;
+      const current = activeSchemeId();
       for (const button of colorButtons) {
         const selected = button.dataset.colorChoice === current;
         button.setAttribute("aria-checked", String(selected));
         button.tabIndex = selected ? 0 : -1;
       }
     }
+
     store.COLOR_SCHEMES.forEach((scheme, index) => {
-      const button = el("button", {
-        class: "color-choice", type: "button", role: "radio", "aria-label": scheme.label + "：" + scheme.description,
-        dataset: { colorChoice: scheme.id },
-        onclick: () => {
-          if (store.settings().colorScheme === scheme.id) return;
-          store.patchSettings({ colorScheme: scheme.id });
-          updateColors();
-          OTP.app.applyTheme(true);
+      const button = el(
+        "button",
+        {
+          class: "color-choice",
+          type: "button",
+          role: "radio",
+          "aria-label": scheme.label + "：" + scheme.description,
+          dataset: { colorChoice: scheme.id, colorMode: scheme.mode },
+          onclick: () => {
+            store.patchSettings({ theme: scheme.mode, colorScheme: scheme.id });
+            themeSeg.setActive(scheme.mode);
+            updateColors();
+            OTP.app.applyTheme(true);
+          },
+          onkeydown: event => {
+            let next;
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % colorButtons.length;
+            else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (index + colorButtons.length - 1) % colorButtons.length;
+            else if (event.key === "Home") next = 0;
+            else if (event.key === "End") next = colorButtons.length - 1;
+            if (next !== undefined) {
+              event.preventDefault(); event.stopPropagation();
+              colorButtons[next].focus(); colorButtons[next].click();
+            }
+          },
         },
-        onkeydown: event => {
-          let next;
-          if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % colorButtons.length;
-          else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (index + colorButtons.length - 1) % colorButtons.length;
-          else if (event.key === "Home") next = 0;
-          else if (event.key === "End") next = colorButtons.length - 1;
-          if (next !== undefined) {
-            event.preventDefault(); event.stopPropagation();
-            colorButtons[next].focus(); colorButtons[next].click();
-          }
-        },
-      }, el("span", { class: "color-swatch", "aria-hidden": "true" }, el("i"), el("i"), el("i")),
-      el("span", { class: "color-name", text: scheme.label }),
-      el("span", { class: "color-selected", html: icon("check", 10), "aria-hidden": "true" }));
-      colorButtons.push(button); colorChoices.append(button);
+        el("span", { class: "color-swatch", "aria-hidden": "true" }, el("i"), el("i")),
+        el("span", { class: "color-name", text: scheme.label }),
+        el("span", { class: "color-selected", html: icon("check", 10), "aria-hidden": "true" })
+      );
+      colorButtons.push(button);
+      (scheme.mode === "dark" ? darkChoices : lightChoices).append(button);
     });
     updateColors();
-    const colorRow = el("div", { class: "color-setting" },
-      el("div", { class: "color-setting-head" }, el("span", { text: "色系" }), el("span", { text: "五套配色 · 均支持浅色与深色" })), colorChoices);
+
+    colorGroupWrap.append(
+      el("div", { class: "color-group-label" }, el("span", { html: icon("sun", 11) }), el("span", { text: "浅色渐变" })),
+      lightChoices,
+      el("div", { class: "color-group-label" }, el("span", { html: icon("moon", 11) }), el("span", { text: "深色渐变" })),
+      darkChoices
+    );
+
+    const colorRow = el(
+      "div",
+      { class: "color-setting" },
+      el("div", { class: "color-setting-head" }, el("span", { text: "双色渐变主题" }), el("span", { text: "明暗各 3 组 · 联动管理页背景" })),
+      colorGroupWrap
+    );
 
     const viewSeg = ui.segmented({
       active: settings.view,

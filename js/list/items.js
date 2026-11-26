@@ -32,13 +32,17 @@
           el(
             "span",
             { class: "row-sub" },
-            // 宽屏是表格：服务名贴着列首，复制入口和时间放在同一列右侧
+            // 宽屏是表格：服务名贴着列首，小按钮组（末尾为二维码）与更新时间分列对齐
             isPage
               ? [
-                  issuerNode,
-                  account.period !== 30
-                    ? el("span", { class: "period-chip", text: account.period + "s" })
-                    : null,
+                  el(
+                    "span",
+                    { class: "row-service" },
+                    issuerNode,
+                    account.period !== 30
+                      ? el("span", { class: "period-chip", text: account.period + "s" })
+                      : null
+                  ),
                   tools.node,
                   el("span", {
                     class: "row-time",
@@ -137,6 +141,20 @@
         onpointerdown: (event) => event.stopPropagation(),
       });
 
+      const qrBtn = el("button", {
+        class: "qact-qr",
+        type: "button",
+        "aria-label": (account.email || account.issuer || "未命名 OTP") + "，查看 OTP 二维码",
+        "data-tip": "OTP 二维码",
+        html: icon("qrcode", 15),
+        onclick: (event) => {
+          event.stopPropagation();
+          if (st.actions.showQr) st.actions.showQr(account);
+        },
+        onpointerdown: (event) => event.stopPropagation(),
+        ondblclick: (event) => event.stopPropagation(),
+      });
+
       const node = el(
         "div",
         {
@@ -154,11 +172,11 @@
           pin,
           ring.node
         ),
-        el("div", { class: "q-acts" }, emailBtn, passBtn, codeBtn)
+        el("div", { class: "q-acts" }, emailBtn, passBtn, codeBtn, qrBtn)
       );
 
       bindItem(node, account);
-      return { node, emailNode, issuerNode, codeNode, ring, pin, kind: "quick" };
+      return { node, emailNode, issuerNode, codeNode, ring, pin, qrBtn, kind: "quick" };
     }
 
     function quickButton(iconName, label, handler) {
@@ -214,6 +232,9 @@
           { class: "card-top" },
           OTP.avatar(account),
           nameNode,
+          account.period !== 30
+            ? el("span", { class: "period-chip", text: account.period + "s" })
+            : null,
           ring.node
         ),
         emailNode,
@@ -234,13 +255,26 @@
       const key = miniButton("key", "复制密码", (event) =>
         handleFieldCopy(account, "password", key, event)
       );
+      const qr = miniButton("qrcode", "查看 OTP 二维码", () => {
+        if (st.actions.showQr) st.actions.showQr(account);
+      });
+      qr.classList.add("mini-qr");
       mail.hidden = !account.email;
       key.hidden = !account.password;
-      const node = el("span", { class: className || "row-tools" }, mail, key);
-      if (className === "card-tools") node.append(miniButton("more", "更多操作", (event) => {
-        st.actions.menu(account, node.closest(".item"), event);
-      }));
-      return { node, mail, key };
+
+      if (className === "card-tools") {
+        // 卡片模式：二维码按钮固定在卡片左下角，其余操作固定在右下角
+        const more = miniButton("more", "更多操作", (event) => {
+          st.actions.menu(account, node.closest(".item"), event);
+        });
+        const right = el("span", { class: "card-tools-right" }, mail, key, more);
+        const node = el("span", { class: "card-tools" }, qr, right);
+        return { node, mail, key, qr };
+      }
+
+      // 管理页列表模式：二维码按钮放置在服务列的最后一个小按钮
+      const node = el("span", { class: className || "row-tools" }, mail, key, qr);
+      return { node, mail, key, qr };
     }
 
     function miniButton(iconName, tip, handler) {

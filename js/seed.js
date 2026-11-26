@@ -9,6 +9,13 @@
   const OTP = global.OTP;
   const uid = OTP.uid;
 
+  const DEFAULT_CATEGORIES = [
+    { id: "cat_google", name: "Google", icon: "brand-google" },
+    { id: "cat_github", name: "GitHub", icon: "brand-github" },
+    { id: "cat_chatgpt", name: "ChatGPT", icon: "brand-chatgpt" },
+    { id: "cat_microsoft", name: "Microsoft", icon: "brand-microsoft" },
+  ];
+
   const CATEGORIES = [
     { id: "cat_work", name: "工作", icon: "briefcase" },
     { id: "cat_play", name: "游戏", icon: "gamepad" },
@@ -189,8 +196,17 @@
     }));
   }
 
+  function defaultCategories() {
+    // 固定初始时间戳 1：跨设备同步时任何编辑或删除都会自然胜出，不会复活已删默认分类。
+    return DEFAULT_CATEGORIES.map((c) => ({ ...c, createdAt: 1, updatedAt: 1 }));
+  }
+
   function categories() {
-    return CATEGORIES.map((c) => ({ ...c, createdAt: Date.now() }));
+    const now = Date.now();
+    return [
+      ...CATEGORIES.map((c) => ({ ...c, createdAt: now, updatedAt: now })),
+      ...defaultCategories(),
+    ];
   }
 
   const line = account => `${account.email}----${account.password}----${account.secret}`;
@@ -201,5 +217,5 @@
     `otpauth://totp/Demo%20Import:${DEMO.imports[2].email}?secret=${DEMO.imports[2].secret}&issuer=Demo%20Import&digits=8`,
   ].join("\n");
 
-  OTP.seed = { accounts, categories, SAMPLE_IMPORT };
+  OTP.seed = { accounts, categories, defaultCategories, SAMPLE_IMPORT };
 })(window);

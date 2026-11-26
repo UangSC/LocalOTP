@@ -11,7 +11,8 @@
       spellcheck: false,
       placeholder:
         "aurora@example.com----Aurora#2026----JBSWY3DPEHPK3PXP\n" +
-        "也认 邮箱--密码--密钥、Tab 或 | 分隔",
+        "otpauth://totp/GitHub:alice@example.com?secret=JBSWY3DPEHPK3PXP\n" +
+        "也支持 邮箱--密码--密钥、Tab、| 分隔与 Base32 密钥",
     });
 
     const chips = el("div", { class: "imp-stats quick-stats" });
@@ -112,13 +113,13 @@
       hint,
       el("p", {
         class: "field-hint",
-        text: "一行一条；密码里如果含 --，请改用 ---- 分隔，避免被切错。",
+        text: "一行一条，支持 邮箱----密码----密钥（含 -- / Tab / |）、otpauth:// 链接或纯 Base32 密钥。",
       })
     );
 
     ui.openSheet({
       title: "快速添加",
-      subtitle: "邮箱 · 密码 · 2FA 密钥，一行搞定",
+      subtitle: "账号文本 · OTP 链接 · Base32 密钥，一行搞定",
       body,
       footer: [cancel, addBtn],
     });

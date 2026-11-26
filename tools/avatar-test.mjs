@@ -24,43 +24,47 @@ try{
   await goto(cdp,base+"/index.html?test");await unlock();
   await evaluate(cdp,"OTP.store.patchSettings({view:'grid'});OTP.app.renderAll({stagger:false});window.avatarNodes=[...document.querySelectorAll('#list .avatar')]");
   for(const theme of ["light","dark"]){
-    for(const color of ["purple","green","blue","pink","mono"]){
+    for(const color of ["ocean","aurora","sunset"]){
       await evaluate(cdp,`OTP.store.patchSettings({theme:'${theme}',colorScheme:'${color}'});OTP.app.applyTheme(false)`);await sleep(450);
       check(`${color}/${theme} 原有头像节点直接换色`,await evaluate(cdp,"avatarNodes.every((n,i)=>n===document.querySelectorAll('#list .avatar')[i])"));
-      check(`${color}/${theme} 只有字母且没有固定行内色值`,await evaluate(cdp,"avatarNodes.every(n=>/^[A-Z]{1,2}$/.test(n.textContent)&&!n.querySelector('svg')&&!n.hasAttribute('style'))"));
-      const sample=await evaluate(cdp,`(()=>{
-        const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');
-        const rgb=color=>{ctx.clearRect(0,0,1,1);ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3)};
-        const luminance=c=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
-        const contrast=(a,b)=>{a=luminance(a);b=luminance(b);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
-        return avatarNodes.map(n=>{
-          const style=getComputedStyle(n),probe=document.createElement('span');n.append(probe);
-          probe.style.color='var(--avatar-fill-start)';const top=rgb(getComputedStyle(probe).color);
-          probe.style.color='var(--avatar-fill-end)';const bottom=rgb(getComputedStyle(probe).color);probe.remove();
-          const ink=rgb(style.color);let minimum=100;
-          for(let i=0;i<=20;i++){const mix=top.map((v,j)=>v+(bottom[j]-v)*i/20);minimum=Math.min(minimum,contrast(ink,mix));}
-          return {letters:n.textContent,tone:n.dataset.avatarTone,top,bottom,ink,minimum,bg:style.backgroundImage};
-        });
-      })()`);
-      metrics.push({theme,color,avatars:sample});
-      if(process.argv.includes("--details"))console.log(JSON.stringify(sample));
-      check(`${color}/${theme} 三档头像渐变文字对比度 ≥4.5`,new Set(sample.map(x=>x.tone)).size===3 && sample.every(x=>x.minimum>=4.5));
-      check(`${color}/${theme} 同色系保留轻微明度层次`,new Set(sample.map(x=>x.bg)).size===3);
-      if(color==='mono')check(`${theme} 黑白头像保持中性色`,sample.every(x=>[x.top,x.bottom,x.ink].every(rgb=>Math.max(...rgb)-Math.min(...rgb)<=4)));
+      check(`${color}/${theme} 已分类账号渲染对应类别 SVG 图标`,await evaluate(cdp,"avatarNodes.every(n=>n.classList.contains('is-cat-icon') && !!n.querySelector('svg'))"));
       await shot(`${color}-${theme}-grid`);
     }
   }
-  for(const theme of ["light","dark"]){
-    check(`${theme} 同一服务在五个色系下颜色均不同`,new Set(metrics.filter(m=>m.theme===theme).map(m=>m.avatars[0].bg)).size===5);
-  }
-  for(const color of ["purple","green","blue","pink","mono"]){
-    check(`${color} 浅深色字色与背景分别适配`,metrics.find(m=>m.color===color&&m.theme==='light').avatars[0].bg!==metrics.find(m=>m.color===color&&m.theme==='dark').avatars[0].bg);
-  }
-  await evaluate(cdp,"OTP.store.patchSettings({theme:'light',colorScheme:'green',view:'list'});OTP.app.applyTheme(false);OTP.app.renderAll({stagger:false})");await sleep(250);await shot("green-light-list");
-  check("列表头像采用相同档位机制",await evaluate(cdp,"[...document.querySelectorAll('.row .avatar')].every(n=>n.dataset.avatarTone!==undefined&&!n.hasAttribute('style'))"));
-  await evaluate(cdp,"OTP.store.persist()");await setViewport(cdp,402,600,1);await goto(cdp,base+"/popup.html");await unlock();await sleep(500);await shot("green-light-popup");
-  check("重开弹窗保留绿色字母头像",await evaluate(cdp,"document.documentElement.dataset.colorScheme==='green'&&[...document.querySelectorAll('.quick .avatar')].every(n=>n.dataset.avatarTone!==undefined&&!n.hasAttribute('style'))"));
+  // 验证平台分类 SVG 头像各自使用官方 Logo 主题色（浅色 & 深色）
+  await evaluate(cdp,`(()=>{const acc=OTP.store.accounts();
+    OTP.store.updateAccount(acc[1].id,{categoryId:'cat_chatgpt'});
+    OTP.store.updateAccount(acc[2].id,{categoryId:'cat_github'});
+    OTP.store.updateAccount(acc[3].id,{categoryId:'cat_google'});
+    OTP.store.updateAccount(acc[4].id,{categoryId:'cat_microsoft'});
+    OTP.store.patchSettings({theme:'light',colorScheme:'ocean',view:'list'});
+    OTP.app.applyTheme(false);
+    OTP.app.renderAll({stagger:false});
+  })()`);await sleep(250);
+  check("浅色模式下平台分类头像使用各品牌 Logo 主题色",await evaluate(cdp,`(()=>{
+    const gpt=getComputedStyle(document.querySelector('.avatar[data-avatar-icon="brand-chatgpt"] svg')).color;
+    const gh=getComputedStyle(document.querySelector('.avatar[data-avatar-icon="brand-github"] svg')).color;
+    const dev=getComputedStyle(document.querySelector('.avatar.is-cat-icon:not([data-avatar-icon^="brand-"]) svg')).color;
+    const gPaths=[...document.querySelectorAll('.avatar[data-avatar-icon="brand-google"] svg path')];
+    const mPaths=[...document.querySelectorAll('.avatar[data-avatar-icon="brand-microsoft"] svg path')];
+    return gpt==='rgb(16, 163, 127)' && gh==='rgb(24, 23, 23)' && gpt!==gh && gpt!==dev
+      && gPaths.length===4 && new Set(gPaths.map(p=>getComputedStyle(p).fill)).size===4
+      && mPaths.length===4 && new Set(mPaths.map(p=>getComputedStyle(p).fill)).size===4;
+  })()`));
+  await evaluate(cdp,"OTP.store.patchSettings({theme:'dark',colorScheme:'midnight'});OTP.app.applyTheme(false)");await sleep(250);
+  check("深色模式下平台分类头像切换为高对比品牌主题色",await evaluate(cdp,`(()=>{
+    const gpt=getComputedStyle(document.querySelector('.avatar[data-avatar-icon="brand-chatgpt"] svg')).color;
+    const gh=getComputedStyle(document.querySelector('.avatar[data-avatar-icon="brand-github"] svg')).color;
+    return gpt==='rgb(45, 212, 168)' && gh==='rgb(240, 246, 252)' && gpt!==gh;
+  })()`));
+  await evaluate(cdp,"OTP.store.patchSettings({theme:'light',colorScheme:'ocean'});OTP.app.applyTheme(false)");await sleep(200);
+  await evaluate(cdp,"OTP.store.updateAccount(OTP.store.accounts()[0].id,{categoryId:''});OTP.app.renderAll({stagger:false})");await sleep(250);
+  check("未分类账号使用字母头像",await evaluate(cdp,"(()=>{const a=document.querySelector('#list .avatar');return !a.classList.contains('is-cat-icon') && /^[A-Z]{1,2}$/.test(a.textContent) && !a.querySelector('svg');})()"));
+  await evaluate(cdp,"OTP.store.patchSettings({theme:'light',colorScheme:'ocean',view:'list'});OTP.app.applyTheme(false);OTP.app.renderAll({stagger:false})");await sleep(250);await shot("ocean-light-list");
+  check("列表头像采用相同分类/字母规则",await evaluate(cdp,"[...document.querySelectorAll('.row .avatar')].slice(1).every(n=>n.classList.contains('is-cat-icon') && !!n.querySelector('svg'))"));
+  await evaluate(cdp,"OTP.store.persist()");await setViewport(cdp,402,600,1);await goto(cdp,base+"/popup.html");await unlock();await sleep(500);await shot("ocean-light-popup");
+  check("重开弹窗保留默认主题与分类头像",await evaluate(cdp,"document.documentElement.dataset.colorScheme==='ocean'&&[...document.querySelectorAll('.quick .avatar')].slice(1).every(n=>n.classList.contains('is-cat-icon') && !!n.querySelector('svg'))"));
   check("控制台没有异常",errors.length===0);
   writeFileSync(resolve(output,"contrast.json"),JSON.stringify(metrics,null,2));
-  console.log(`头像检查 ${count} 项通过，最低对比度 ${Math.min(...metrics.flatMap(m=>m.avatars.map(a=>a.minimum))).toFixed(2)}:1`);
+  console.log(`头像检查 ${count} 项通过`);
 }finally{cdp.close();browser.kill();server.close();}

@@ -22,12 +22,31 @@
 
     const fileInput = el("input", { type: "file", accept: ".txt,text/plain", hidden: true });
 
-    const pickBtn = el("button", {
-      class: "btn btn-ghost btn-xs",
-      type: "button",
-      html: icon("file", 12, "i-sm") + "<span>选择 .txt</span>",
-      onclick: () => fileInput.click(),
-    });
+    const scanCard = el(
+      "button",
+      {
+        id: "imp-open-scan",
+        class: "scan-source imp-source",
+        type: "button",
+        onclick: () => OTP.scan.open(),
+      },
+      el("span", { html: icon("scan", 20) }),
+      el("b", { text: "扫码与截图" }),
+      el("small", { text: "网页框选 · 图片 · OTP 链接" })
+    );
+
+    const fileCard = el(
+      "button",
+      {
+        id: "imp-pick-file",
+        class: "scan-source imp-source",
+        type: "button",
+        onclick: () => fileInput.click(),
+      },
+      el("span", { html: icon("file", 20) }),
+      el("b", { text: "选择文本文件" }),
+      el("small", { text: "读取 .txt 或拖入下方" })
+    );
 
     const sampleBtn = el("button", {
       class: "btn btn-ghost btn-xs",
@@ -135,7 +154,8 @@
         const cls = row.kind === "bad" ? "is-bad" : row.kind === "dup" ? "is-dup" : "";
         const statusClass = row.kind === "bad" ? "is-bad" : row.kind === "dup" ? "is-dup" : "is-ok";
         const statusText = row.kind === "bad" ? "无效" : row.kind === "dup" ? "重复" : "新增";
-        const primary = row.kind === "bad" ? row.reason : row.email + (row.reason ? " · " + row.reason : "");
+        const label = row.email || row.issuer || "未命名 OTP";
+        const primary = row.kind === "bad" ? row.reason : label + (row.reason ? " · " + row.reason : "");
 
         const item = el(
           "div",
@@ -222,40 +242,44 @@
 
     const body = el(
       "div",
-      {},
+      { class: "imp-pane" },
+      el("div", { class: "imp-sources" }, scanCard, fileCard),
       el(
         "div",
-        { class: "card-box" },
-        el("button", { class: "btn btn-ghost", type: "button", text: "扫码 / 图片 / OTP 链接", onclick: () => OTP.scan.open() }),
+        { class: "card-box imp-editor-box" },
         el(
           "div",
           { class: "card-head" },
-          el("span", { class: "t", text: "粘贴账号数据" }),
-          el("span", { class: "h", text: "邮箱----密码----密钥" })
+          el("span", { class: "t", text: "批量粘贴" }),
+          el("span", { class: "h", text: "邮箱----密码----密钥 / otpauth://" })
         ),
         dropzone,
-        el("div", { class: "row-btns" }, pickBtn, sampleBtn, clearBtn, el("span", { class: "spacer" }), sizeLabel),
+        el("div", { class: "row-btns" }, sampleBtn, clearBtn, el("span", { class: "spacer" }), sizeLabel),
         fileInput
       ),
-      el("div", { class: "imp-stats" }, totalStat.node, freshStat.node, dupStat.node, badStat.node),
       el(
         "div",
-        { class: "card-box", style: { "padding-bottom": "8px" } },
+        { class: "card-box imp-preview-box" },
         el(
           "div",
-          { class: "card-head", style: { "margin-bottom": "7px" } },
+          { class: "card-head" },
           el("span", { class: "t", text: "解析预览" }),
           copyErrors
         ),
+        el("div", { class: "imp-stats" }, totalStat.node, freshStat.node, dupStat.node, badStat.node),
         previewList
       )
     );
 
     const footer = el(
       "div",
-      { style: { display: "flex", "align-items": "center", gap: "10px", width: "100%" } },
-      el("span", { style: { "font-size": "var(--fs-2xs)", color: "var(--ink-3)", "white-space": "nowrap" }, text: "重复项" }),
-      dupSeg.node,
+      { class: "imp-footer" },
+      el(
+        "div",
+        { class: "imp-dup-ctl" },
+        el("span", { class: "imp-dup-label", text: "重复项" }),
+        dupSeg.node
+      ),
       doImportBtn
     );
 

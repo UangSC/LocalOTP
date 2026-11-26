@@ -88,6 +88,7 @@
 
   const ICONS = {
     scan: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M3 12h18"/><path d="M7 7h3v3H7zm7 7h3v3h-3z"/>',
+    qrcode: '<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M6.75 6.75h.01M17.25 6.75h.01M6.75 17.25h.01" stroke-width="2.4"/><path d="M14 14h2.5v2.5H14zm3.5 3.5h3v3h-3zM14 20h2.5M20 14v2"/>',
     image: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/>',
     search: '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.4 15.4 4.3 4.3"/>',
     x: '<path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/>',
@@ -304,11 +305,29 @@
   }
 
   function avatar(account) {
-    const key = account.issuer || account.email.split("@")[1] || account.email;
+    const key = account.issuer || account.email.split("@")[1] || account.email || "otp";
     const tone = hashStr(key.trim().toLowerCase()) % 3;
-    return el("span", { class: "avatar", "aria-hidden": "true",
-      dataset: { avatarTone: String(tone) } },
-      el("span", { class: "avatar-letter", text: initials(account.email, account.issuer) }));
+    const cat = account?.categoryId && OTP.store?.categoryOf ? OTP.store.categoryOf(account.categoryId) : null;
+    if (cat && cat.icon) {
+      return el(
+        "span",
+        {
+          class: "avatar is-cat-icon",
+          "aria-hidden": "true",
+          dataset: { avatarTone: String(tone), avatarIcon: cat.icon },
+        },
+        el("span", { class: "avatar-ico", html: icon(cat.icon, 20) })
+      );
+    }
+    return el(
+      "span",
+      {
+        class: "avatar",
+        "aria-hidden": "true",
+        dataset: { avatarTone: String(tone) },
+      },
+      el("span", { class: "avatar-letter", text: initials(account.email, account.issuer) })
+    );
   }
 
   /* ── 缓动滚动 ─────────────────────────────────────────────────────────── */

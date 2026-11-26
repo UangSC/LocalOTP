@@ -25,6 +25,8 @@ const suites = [
   ["tools/popup-sizing-test.mjs"],
   ["tools/popup-native-size-test.mjs"],
   ["tools/management-interaction-test.mjs"],
+  ["tools/qr-export-test.mjs"],
+  ["tools/color-test.mjs"],
 ];
 for (const args of suites) {
   console.log("运行：node " + args.join(" "));

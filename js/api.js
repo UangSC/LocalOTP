@@ -20,15 +20,24 @@
   const media = matchMedia("(prefers-color-scheme: dark)");
   let override = null;
   function theme() {
-    let pref = "auto", scheme = "blue";
-    try { pref = localStorage.getItem("localotp:theme-preference") || localStorage.getItem("localotp:theme") || "auto";
-      scheme = localStorage.getItem("localotp:color-scheme") || "blue"; } catch (_) {}
-    if (!["blue", "purple", "green", "pink", "mono"].includes(scheme)) scheme = "blue";
+    const validSchemes = ["ocean", "aurora", "sunset", "midnight", "nebula", "ember"];
+    const legacyMap = { blue: "ocean", green: "ocean", purple: "aurora", pink: "sunset", mono: "ocean" };
+    let pref = "light", scheme = "ocean";
+    try { pref = localStorage.getItem("localotp:theme-preference") || localStorage.getItem("localotp:theme") || "light";
+      scheme = localStorage.getItem("localotp:color-scheme") || "ocean"; } catch (_) {}
+    if (!validSchemes.includes(scheme)) scheme = legacyMap[scheme] || "ocean";
     const next = override || (["dark", "light"].includes(pref) ? pref : media.matches ? "dark" : "light");
     document.documentElement.dataset.theme = next;
     document.documentElement.dataset.colorScheme = scheme;
     themeButton.innerHTML = OTP.icon(next === "dark" ? "sun" : "moon", 18);
     themeButton.setAttribute("aria-label", next === "dark" ? "切换浅色主题" : "切换深色主题");
+  }
+  const brandLink = document.querySelector(".api-brand");
+  if (brandLink && !["chrome-extension:", "edge-extension:", "moz-extension:"].includes(location.protocol) && !["localhost", "127.0.0.1"].includes(location.hostname)) {
+    brandLink.href = "https://github.com/UangSC/LocalOTP";
+    brandLink.target = "_blank";
+    brandLink.rel = "noopener noreferrer";
+    brandLink.setAttribute("aria-label", "访问 LocalOTP GitHub 仓库");
   }
   themeButton.addEventListener("click", () => { override = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; theme(); });
   media.addEventListener("change", theme);

@@ -82,7 +82,8 @@
     }
 
     list.forEach((account, index) => {
-      const signature = JSON.stringify(account);
+      const catIcon = account.categoryId ? (OTP.store.categoryOf(account.categoryId)?.icon || "") : "";
+      const signature = JSON.stringify([account, catIcon]);
       let ref = previous.get(account.id);
       const cached = ref?.signature === signature ? ref : null;
       const kind = view === "list" ? "row" : view === "grid" ? "card" : "quick";

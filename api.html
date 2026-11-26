@@ -40,15 +40,24 @@
           <div class="api-card-foot"><span id="api-local-icon" aria-hidden="true"></span><span>密钥仅用于当前页面计算，不会加入账号库或同步。</span></div>
         </section>
         <details class="api-guide">
-          <summary>从浏览器地址栏直接使用</summary>
-          <p>输入 <kbd>otp</kbd>，按 <kbd>Tab</kbd> 或空格进入 LocalOTP，再粘贴密钥并回车。</p>
+          <summary>在扩展与浏览器地址栏中使用</summary>
+          <p>若浏览器已安装 <strong>LocalOTP</strong> 扩展，直接在地址栏输入 <kbd>otp</kbd> 后按 <kbd>Tab</kbd> 或空格，即可粘贴密钥回车计算，无需打开此网页。</p>
           <div class="api-code"><code>otp JBSWY3DPEHPK3PXP</code><span>公开示例</span></div>
-          <p>也可以使用本机扩展页面地址，追加 <code>#otp=密钥</code>。点下方复制的是不含密钥的入口地址。</p>
+          <p>在未安装扩展的电脑上，可直接收藏本页（GitHub Pages 托管，纯前端本地计算），也支持在 URL 末尾追加 <code>#otp=密钥</code> 快速载入。下方复制的是不含密钥的入口地址。</p>
           <button type="button" class="btn btn-ghost" id="api-copy-entry">复制入口地址</button>
           <p class="api-history-note">地址栏输入可能被浏览器记录。敏感密钥建议直接粘贴到上方输入框。</p>
         </details>
       </main>
-      <footer class="api-footer">LOCALOTP <span>密钥留在本机，验证码随时间更新。</span></footer>
+      <footer class="api-footer">
+        <div class="api-footer-main">
+          <strong>LOCALOTP</strong>
+          <span>所有密钥仅在本机浏览器内存计算，不上传云端。若已安装 LocalOTP 浏览器扩展，可直接在地址栏输入 <kbd>otp</kbd> 快速调用。</span>
+        </div>
+        <a class="api-gh-link" href="https://github.com/UangSC/LocalOTP" target="_blank" rel="noopener noreferrer" aria-label="访问 LocalOTP GitHub 仓库">
+          <svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          <span>GitHub · LocalOTP</span>
+        </a>
+      </footer>
     </div>
     <noscript>LocalOTP 需要启用 JavaScript 才能计算验证码。</noscript>
     <script src="js/util.js"></script>

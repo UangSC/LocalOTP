@@ -9,6 +9,7 @@ localotp-backup-*.json
 # 运行依赖、缓存与系统文件。
 node_modules/
 dist/
+_site/
 artifacts/
 coverage/
 *.har
